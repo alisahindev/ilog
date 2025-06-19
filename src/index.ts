@@ -9,7 +9,7 @@ export {
   SimpleApiFormatter as ApiFormatter,
   SimpleJsonFormatter as JsonFormatter,
   SimplePerformanceFormatter as PerformanceFormatter,
-  SimpleTextFormatter as PrettyFormatter
+  SimpleTextFormatter as PrettyFormatter,
 } from './formatters/simple';
 
 // Writer exports
@@ -21,7 +21,7 @@ export {
   maskEmail,
   maskSensitiveData,
   maskUrlParameters,
-  type SensitiveDataMaskingOptions
+  type SensitiveDataMaskingOptions,
 } from './utils/sensitive-data';
 
 // Interceptor exports
@@ -29,7 +29,7 @@ export {
   AxiosInterceptor,
   BaseApiInterceptor,
   FetchInterceptor,
-  XHRInterceptor
+  XHRInterceptor,
 } from './interceptors/api-interceptor';
 
 // Middleware exports
@@ -38,7 +38,7 @@ export {
   FilterMiddleware,
   MetricsMiddleware,
   RateLimitMiddleware,
-  TimestampMiddleware
+  TimestampMiddleware,
 } from './middlewares';
 
 // Import Logger for factory function
