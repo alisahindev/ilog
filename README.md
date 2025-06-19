@@ -18,15 +18,15 @@ A comprehensive, fully type-supported logging library for JavaScript/TypeScript 
 ## Installation
 
 ```bash
-npm install @sahin/ilog
+npm install @alisahindev/ilog
 # or
-yarn add @sahin/ilog
+yarn add @alisahindev/ilog
 ```
 
 ## Quick Start
 
 ```typescript
-import { createLogger, LogLevel } from '@sahin/ilog';
+import { createLogger, LogLevel } from '@alisahindev/ilog';
 
 // Basic usage
 const logger = createLogger({
@@ -45,7 +45,7 @@ logger.error('An error occurred', new Error('Sample error'));
 ### Automatic Interceptors
 
 ```typescript
-import { FetchInterceptor, AxiosInterceptor } from '@sahin/ilog';
+import { FetchInterceptor, AxiosInterceptor } from '@alisahindev/ilog';
 
 // Automatic logging for Fetch API
 const fetchInterceptor = new FetchInterceptor(logger, {
@@ -102,7 +102,7 @@ logger.logPerformance({
 ## Sensitive Data Masking
 
 ```typescript
-import { maskSensitiveData } from '@sahin/ilog';
+import { maskSensitiveData } from '@alisahindev/ilog';
 
 const userData = {
   name: 'John Doe',
@@ -147,7 +147,7 @@ iLog provides a powerful middleware system that allows you to intercept and modi
 
 #### Timestamp Middleware
 ```typescript
-import { TimestampMiddleware } from '@sahin/ilog';
+import { TimestampMiddleware } from '@alisahindev/ilog';
 
 const logger = createLogger();
 logger.use(new TimestampMiddleware({
@@ -160,7 +160,7 @@ logger.info('Message with formatted timestamp');
 
 #### Filter Middleware
 ```typescript
-import { FilterMiddleware, LogLevel } from '@sahin/ilog';
+import { FilterMiddleware, LogLevel } from '@alisahindev/ilog';
 
 const filterMiddleware = new FilterMiddleware({
   minLevel: LogLevel.INFO,
@@ -176,7 +176,7 @@ logger.use(filterMiddleware);
 
 #### Correlation ID Middleware
 ```typescript
-import { CorrelationIdMiddleware } from '@sahin/ilog';
+import { CorrelationIdMiddleware } from '@alisahindev/ilog';
 
 const correlationMiddleware = new CorrelationIdMiddleware({
   fieldName: 'traceId',
@@ -190,7 +190,7 @@ logger.info('Message with correlation ID');
 
 #### Metrics Middleware
 ```typescript
-import { MetricsMiddleware } from '@sahin/ilog';
+import { MetricsMiddleware } from '@alisahindev/ilog';
 
 const metricsMiddleware = new MetricsMiddleware({
   trackFrequency: true,
@@ -206,7 +206,7 @@ console.log(metrics.totalLogs, metrics.errorCount, metrics.logFrequency);
 
 #### Rate Limiting Middleware
 ```typescript
-import { RateLimitMiddleware, LogLevel } from '@sahin/ilog';
+import { RateLimitMiddleware, LogLevel } from '@alisahindev/ilog';
 
 const rateLimitMiddleware = new RateLimitMiddleware({
   maxLogsPerSecond: 10,
@@ -225,7 +225,7 @@ logger.use(rateLimitMiddleware);
 
 #### Function-based Middleware
 ```typescript
-import { Logger, MiddlewareFunction } from '@sahin/ilog';
+import { Logger, MiddlewareFunction } from '@alisahindev/ilog';
 
 const enrichmentMiddleware: MiddlewareFunction = async (entry, context, next) => {
   // Enrich log entry
@@ -248,7 +248,7 @@ logger.use(enrichmentMiddleware);
 
 #### Class-based Middleware
 ```typescript
-import { LogMiddleware, LogEntry, MiddlewareContext } from '@sahin/ilog';
+import { LogMiddleware, LogEntry, MiddlewareContext } from '@alisahindev/ilog';
 
 class CustomMiddleware implements LogMiddleware {
   name = 'CustomMiddleware';
@@ -298,7 +298,7 @@ import {
   TimestampMiddleware, 
   FilterMiddleware,
   LogLevel 
-} from '@sahin/ilog';
+} from '@alisahindev/ilog';
 
 const logger = new Logger({
   level: LogLevel.INFO,
@@ -331,7 +331,7 @@ logger.use(asyncMiddleware);
 ## Custom Writers
 
 ```typescript
-import { HttpWriter, FileWriter, BufferedWriter } from '@sahin/ilog';
+import { HttpWriter, FileWriter, BufferedWriter } from '@alisahindev/ilog';
 
 const logger = createLogger({
   customWriters: [
@@ -353,7 +353,7 @@ const logger = createLogger({
 ## Advanced Configuration
 
 ```typescript
-import { Logger, LogLevel, JsonFormatter, ApiFormatter } from '@sahin/ilog';
+import { Logger, LogLevel, JsonFormatter, ApiFormatter } from '@alisahindev/ilog';
 
 const logger = new Logger({
   level: LogLevel.DEBUG,
@@ -383,7 +383,7 @@ logger.fatal('Fatal message');    // LogLevel.FATAL
 
 ### Pretty Formatter (Development)
 ```typescript
-import { PrettyFormatter } from '@sahin/ilog';
+import { PrettyFormatter } from '@alisahindev/ilog';
 
 const logger = createLogger({
   formatter: new PrettyFormatter()
@@ -393,7 +393,7 @@ const logger = createLogger({
 
 ### JSON Formatter (Production)
 ```typescript
-import { JsonFormatter } from '@sahin/ilog';
+import { JsonFormatter } from '@alisahindev/ilog';
 
 const logger = createLogger({
   formatter: new JsonFormatter()
@@ -403,7 +403,7 @@ const logger = createLogger({
 
 ### API Formatter
 ```typescript
-import { ApiFormatter } from '@sahin/ilog';
+import { ApiFormatter } from '@alisahindev/ilog';
 
 const logger = createLogger({
   formatter: new ApiFormatter()
@@ -539,10 +539,17 @@ MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
-- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/ilog/issues)
-- Documentation: [Full API documentation](https://github.com/yourusername/ilog#readme)
+- GitHub Issues: [Report bugs or request features](https://github.com/alisahindev/ilog/issues)
+- Documentation: [Full API documentation](https://github.com/alisahindev/ilog#readme)
 
 ## Changelog
+
+### v1.1.8
+- Enhanced middleware system
+- Improved sensitive data masking
+- Performance optimizations
+- Async middleware support
+- New formatter options
 
 ### v1.0.0
 - Initial release
