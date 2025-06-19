@@ -49,14 +49,17 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/ilog.git"
+    "url": "https://github.com/alisahindev/ilog.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/ilog/issues"
+    "url": "https://github.com/alisahindev/ilog/issues"
   },
-  "homepage": "https://github.com/yourusername/ilog#readme",
+  "homepage": "https://github.com/alisahindev/ilog#readme",
   "engines": {
     "node": ">=14.0.0"
+  },
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
   },
   "devDependencies": {
     "@playwright/test": "^1.53.1",

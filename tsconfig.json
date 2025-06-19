@@ -33,11 +33,11 @@
   "include": [
     "src/**/*",
     "tests/**/*",
+    "examples/**/*",
     "playwright.config.ts"
   ],
   "exclude": [
     "node_modules",
-    "dist",
-    "examples"
+    "dist"
   ]
 } 

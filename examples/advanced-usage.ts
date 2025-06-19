@@ -36,20 +36,6 @@ const customLogger = new Logger({
   ]
 });
 
-// Different formatter examples
-const prettyLogger = new Logger({
-  level: LogLevel.INFO,
-  enableConsole: true,
-  // formatter: new ColorfulApiFormatter() // Colorful API-focused output
-});
-
-const productionLogger = new Logger({
-  level: LogLevel.WARN,
-  enableConsole: false,
-  enableFile: true,
-  filePath: './logs/production.log',
-  formatter: new JsonFormatter() // Structured JSON for log aggregation
-});
 
 // Global context setting
 customLogger.setContext('application', 'advanced-example');
@@ -249,13 +235,10 @@ async function runAdvancedExample() {
   
   // Give some time for any buffered logs to flush and pending operations to complete
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
-  // Exit the process
-  process.exit(0);
 }
 
 // Run the advanced example
 runAdvancedExample().catch((error) => {
   console.error('Advanced example failed:', error);
-  process.exit(1);
+  throw error;
 }); 
