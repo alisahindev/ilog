@@ -21,7 +21,7 @@
     "example-advanced": "ts-node examples/advanced-usage.ts",
     "prepublishOnly": "npm run build",
     "publish:github": "npm publish --registry=https://npm.pkg.github.com/",
-    "publish:npm": "npm publish --registry=https://registry.npmjs.org/",
+    "publish:npm": "mv .npmrc .npmrc.backup 2>/dev/null || true && npm publish --registry=https://registry.npmjs.org/ && mv .npmrc.backup .npmrc 2>/dev/null || true",
     "publish:all": "npm run publish:github && npm run publish:npm",
     "clean": "rm -rf dist",
     "lint": "eslint src/**/*.ts --fix",
