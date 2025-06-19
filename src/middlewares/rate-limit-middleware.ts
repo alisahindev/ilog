@@ -33,25 +33,25 @@ export class RateLimitMiddleware implements LogMiddleware {
     }
 
     const now = entry.timestamp;
-    
+
     // Clean old timestamps
     this.cleanOldTimestamps(now);
-    
+
     // Check rate limits
     if (this.isRateLimitExceeded(now)) {
       this.droppedLogsCount++;
-      
+
       // Call callback if provided
       if (this.options.onRateLimitExceeded) {
         this.options.onRateLimitExceeded(this.droppedLogsCount);
       }
-      
+
       return; // Drop this log entry
     }
 
     // Add timestamp and proceed
     this.logTimestamps.push(now);
-    
+
     // Add rate limit info to context
     context.metadata['rateLimitInfo'] = {
       logsInLastSecond: this.getLogsInWindow(now, 1000),
@@ -109,4 +109,4 @@ export class RateLimitMiddleware implements LogMiddleware {
   resetDroppedLogsCount(): void {
     this.droppedLogsCount = 0;
   }
-} 
+}

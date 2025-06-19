@@ -15,10 +15,12 @@ export class MetricsMiddleware implements LogMiddleware {
   private logHistory: Date[] = [];
   private totalLogSize = 0;
 
-  constructor(private options: { 
-    trackFrequency?: boolean;
-    frequencyWindowMinutes?: number;
-  } = {}) {
+  constructor(
+    private options: {
+      trackFrequency?: boolean;
+      frequencyWindowMinutes?: number;
+    } = {}
+  ) {
     this.metrics = {
       totalLogs: 0,
       logsByLevel: {
@@ -103,4 +105,4 @@ export class MetricsMiddleware implements LogMiddleware {
     this.logHistory = [];
     this.totalLogSize = 0;
   }
-} 
+}

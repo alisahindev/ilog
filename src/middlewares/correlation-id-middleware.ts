@@ -5,11 +5,13 @@ export class CorrelationIdMiddleware implements LogMiddleware {
   public readonly name = 'CorrelationIdMiddleware';
   private correlationId: string;
 
-  constructor(private options: { 
-    idLength?: number;
-    fieldName?: string;
-    generateNew?: boolean;
-  } = {}) {
+  constructor(
+    private options: {
+      idLength?: number;
+      fieldName?: string;
+      generateNew?: boolean;
+    } = {}
+  ) {
     this.correlationId = this.generateCorrelationId();
   }
 
@@ -24,7 +26,7 @@ export class CorrelationIdMiddleware implements LogMiddleware {
     next: () => Promise<void> | void
   ): Promise<void> {
     const fieldName = this.options.fieldName ?? 'correlationId';
-    
+
     // Generate new ID for each log entry if requested
     if (this.options.generateNew) {
       this.correlationId = this.generateCorrelationId();
@@ -50,4 +52,4 @@ export class CorrelationIdMiddleware implements LogMiddleware {
   getCorrelationId(): string {
     return this.correlationId;
   }
-} 
+}

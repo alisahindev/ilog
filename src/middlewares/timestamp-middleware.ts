@@ -12,7 +12,7 @@ export class TimestampMiddleware implements LogMiddleware {
   ): Promise<void> {
     // Add formatted timestamp to context
     const format = this.options.format ?? 'iso';
-    
+
     switch (format) {
       case 'iso':
         entry.context = {
@@ -38,4 +38,4 @@ export class TimestampMiddleware implements LogMiddleware {
 
     await next();
   }
-} 
+}

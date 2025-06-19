@@ -68,4 +68,4 @@ export class FilterMiddleware implements LogMiddleware {
 
     await next();
   }
-} 
+}

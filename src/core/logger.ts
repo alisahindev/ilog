@@ -1,18 +1,18 @@
 import * as crypto from 'crypto';
 import { SimpleApiFormatter, SimpleTextFormatter } from '../formatters/simple';
 import {
-    ApiLogEntry,
-    HttpMethod,
-    ILogger,
-    LogEntry,
-    LogFormatter,
-    LoggerConfig,
-    LogLevel,
-    LogMiddleware,
-    LogWriter,
-    MiddlewareContext,
-    MiddlewareFunction,
-    PerformanceEntry
+  ApiLogEntry,
+  HttpMethod,
+  ILogger,
+  LogEntry,
+  LogFormatter,
+  LoggerConfig,
+  LogLevel,
+  LogMiddleware,
+  LogWriter,
+  MiddlewareContext,
+  MiddlewareFunction,
+  PerformanceEntry,
 } from '../types';
 import { maskSensitiveData, SensitiveDataMaskingOptions } from '../utils/sensitive-data';
 import { BufferedWriter, ConsoleWriter, FileWriter } from '../writers';
@@ -125,14 +125,17 @@ export class Logger implements ILogger {
     const middlewareContext: MiddlewareContext = {
       logger: this,
       config: this.config,
-      metadata: {}
+      metadata: {},
     };
 
     // Execute middleware pipeline
     await this.executeMiddlewarePipeline(entry, middlewareContext);
   }
 
-  private async executeMiddlewarePipeline(entry: LogEntry, context: MiddlewareContext): Promise<void> {
+  private async executeMiddlewarePipeline(
+    entry: LogEntry,
+    context: MiddlewareContext
+  ): Promise<void> {
     let index = 0;
 
     const next = async (): Promise<void> => {
@@ -143,7 +146,7 @@ export class Logger implements ILogger {
       }
 
       const middleware = this.middlewares[index++];
-      
+
       if (middleware) {
         if (typeof middleware === 'function') {
           await middleware(entry, context, next);
