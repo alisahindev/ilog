@@ -90,9 +90,9 @@ jobs:
       # GitHub registry için token ayarla
       - name: Configure GitHub registry
         run: |
-          echo "token: ${{ secrets.GITHUB_TOKEN }}"
+          echo "token: ${{ secrets.GH_PAT }}"
           echo "@alisahindev:registry=https://npm.pkg.github.com/" >> .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PAT }}" >> .npmrc
 
       # NPM registry için token ayarla  
       - name: Configure NPM registry
@@ -104,13 +104,13 @@ jobs:
         run: npm run publish:all
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 
       # Success notification
       - name: Create release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
         with:
           tag_name: v${{ needs.check-version-change.outputs.current-version }}
           release_name: Release v${{ needs.check-version-change.outputs.current-version }}
