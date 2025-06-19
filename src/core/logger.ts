@@ -9,7 +9,7 @@ import {
   LoggerConfig,
   LogLevel,
   LogWriter,
-  PerformanceEntry
+  PerformanceEntry,
 } from '../types';
 import { maskSensitiveData, SensitiveDataMaskingOptions } from '../utils/sensitive-data';
 import { BufferedWriter, ConsoleWriter, FileWriter } from '../writers';
@@ -22,7 +22,7 @@ export class Logger implements ILogger {
   private requestId?: string;
   private sessionId?: string;
   private userId?: string;
-  
+
   constructor(config: Partial<LoggerConfig> = {}) {
     this.config = {
       level: LogLevel.INFO,
@@ -31,20 +31,20 @@ export class Logger implements ILogger {
       enableApiLogging: true,
       enablePerformanceLogging: true,
       sensitiveFields: ['password', 'token', 'key', 'secret'],
-      ...config
+      ...config,
     };
-    
+
     this.setupWriters();
     this.setupFormatter();
     this.generateRequestId();
   }
-  
+
   private setupWriters(): void {
     // Console writer
     if (this.config.enableConsole) {
       this.writers.push(new ConsoleWriter());
     }
-    
+
     // File writer
     if (this.config.enableFile && this.config.filePath) {
       const fileWriter = new FileWriter(
@@ -54,13 +54,13 @@ export class Logger implements ILogger {
       );
       this.writers.push(new BufferedWriter(fileWriter));
     }
-    
+
     // Custom writers
     if (this.config.customWriters) {
       this.writers.push(...this.config.customWriters);
     }
   }
-  
+
   private setupFormatter(): void {
     if (this.config.formatter) {
       this.formatter = this.config.formatter;
@@ -70,11 +70,11 @@ export class Logger implements ILogger {
       this.formatter = new SimpleTextFormatter();
     }
   }
-  
+
   private generateRequestId(): void {
     this.requestId = crypto.randomUUID();
   }
-  
+
   private sanitizeString(input: string): string {
     if (typeof input !== 'string') {
       return String(input);
@@ -82,95 +82,97 @@ export class Logger implements ILogger {
     // Remove control characters and limit length to prevent injection
     return input.replace(/[\x00-\x1F\x7F]/g, '').substring(0, 1000); // eslint-disable-line no-control-regex
   }
-  
+
   private shouldLog(level: LogLevel): boolean {
     return level >= this.config.level;
   }
-  
+
   private async writeLog(entry: LogEntry): Promise<void> {
     if (!this.shouldLog(entry.level)) {
       return;
     }
-    
+
     // Mask sensitive data
     const maskedEntry = this.maskSensitiveDataInEntry(entry);
-    
+
     // Format log
     const formattedLog = this.formatter.format(maskedEntry);
-    
+
     // Write to all writers
-    const writePromises = this.writers.map(writer => 
-      writer.write(formattedLog, entry.level)
-    );
-    
+    const writePromises = this.writers.map(writer => writer.write(formattedLog, entry.level));
+
     await Promise.allSettled(writePromises);
   }
-  
+
   private maskSensitiveDataInEntry(entry: LogEntry): LogEntry {
     if (!this.config.sensitiveFields || this.config.sensitiveFields.length === 0) {
       return entry;
     }
-    
+
     const maskingOptions: SensitiveDataMaskingOptions = {
       sensitiveFields: this.config.sensitiveFields,
       showFirst: 2,
-      showLast: 2
+      showLast: 2,
     };
-    
+
     return {
       ...entry,
       context: entry.context ? maskSensitiveData(entry.context, maskingOptions) : entry.context,
-      message: entry.message // Don't mask message, only context
+      message: entry.message, // Don't mask message, only context
     };
   }
-  
+
   // Basic log methods
   debug(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, message, context);
   }
-  
+
   info(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, message, context);
   }
-  
+
   warn(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, message, context);
   }
-  
+
   error(message: string, error?: Error, context?: Record<string, unknown>): void {
     // Validate input to prevent injection attacks
     if (typeof message !== 'string') {
       throw new Error('Message must be a string');
     }
-    
-    const errorContext = error ? {
-      errorName: this.sanitizeString(error.name),
-      errorMessage: this.sanitizeString(error.message),
-      // Only include stack trace in development mode for security
-      errorStack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
-      ...context
-    } : context;
-    
+
+    const errorContext = error
+      ? {
+          errorName: this.sanitizeString(error.name),
+          errorMessage: this.sanitizeString(error.message),
+          // Only include stack trace in development mode for security
+          errorStack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
+          ...context,
+        }
+      : context;
+
     this.log(LogLevel.ERROR, message, errorContext);
   }
-  
+
   fatal(message: string, error?: Error, context?: Record<string, unknown>): void {
     // Validate input to prevent injection attacks
     if (typeof message !== 'string') {
       throw new Error('Message must be a string');
     }
-    
-    const errorContext = error ? {
-      errorName: this.sanitizeString(error.name),
-      errorMessage: this.sanitizeString(error.message),
-      // Only include stack trace in development mode for security
-      errorStack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
-      ...context
-    } : context;
-    
+
+    const errorContext = error
+      ? {
+          errorName: this.sanitizeString(error.name),
+          errorMessage: this.sanitizeString(error.message),
+          // Only include stack trace in development mode for security
+          errorStack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
+          ...context,
+        }
+      : context;
+
     this.log(LogLevel.FATAL, message, errorContext);
   }
-  
+
   private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
     const entry: LogEntry = {
       timestamp: new Date(),
@@ -179,16 +181,18 @@ export class Logger implements ILogger {
       context: { ...this.context, ...context },
       requestId: this.requestId,
       sessionId: this.sessionId,
-      userId: this.userId
+      userId: this.userId,
     };
-    
+
     this.writeLog(entry);
   }
-  
+
   // API logging methods
   logApiRequest(method: HttpMethod, url: string, options: Partial<ApiLogEntry> = {}): void {
-    if (!this.config.enableApiLogging) {return;}
-    
+    if (!this.config.enableApiLogging) {
+      return;
+    }
+
     const entry: ApiLogEntry = {
       timestamp: new Date(),
       level: LogLevel.INFO,
@@ -200,21 +204,23 @@ export class Logger implements ILogger {
       sessionId: this.sessionId,
       userId: this.userId,
       requestHeaders: options.requestHeaders,
-      requestBody: options.requestBody
+      requestBody: options.requestBody,
     };
-    
+
     this.writeLog(entry);
   }
-  
+
   logApiResponse(
-    method: HttpMethod, 
-    url: string, 
-    statusCode: number, 
-    responseTime: number, 
+    method: HttpMethod,
+    url: string,
+    statusCode: number,
+    responseTime: number,
     options: Partial<ApiLogEntry> = {}
   ): void {
-    if (!this.config.enableApiLogging) {return;}
-    
+    if (!this.config.enableApiLogging) {
+      return;
+    }
+
     const level = statusCode >= 400 ? LogLevel.ERROR : LogLevel.INFO;
     const entry: ApiLogEntry = {
       timestamp: new Date(),
@@ -229,15 +235,22 @@ export class Logger implements ILogger {
       sessionId: this.sessionId,
       userId: this.userId,
       responseHeaders: options.responseHeaders,
-      responseBody: options.responseBody
+      responseBody: options.responseBody,
     };
-    
+
     this.writeLog(entry);
   }
-  
-  logApiError(method: HttpMethod, url: string, error: Error, options: Partial<ApiLogEntry> = {}): void {
-    if (!this.config.enableApiLogging) {return;}
-    
+
+  logApiError(
+    method: HttpMethod,
+    url: string,
+    error: Error,
+    options: Partial<ApiLogEntry> = {}
+  ): void {
+    if (!this.config.enableApiLogging) {
+      return;
+    }
+
     const entry: ApiLogEntry = {
       timestamp: new Date(),
       level: LogLevel.ERROR,
@@ -251,23 +264,23 @@ export class Logger implements ILogger {
       errorDetails: {
         code: (error as any).code,
         stack: error.stack,
-        cause: (error as any).cause
-      }
+        cause: (error as any).cause,
+      },
     };
-    
+
     this.writeLog(entry);
   }
-  
+
   // Performance monitoring
   startTimer(operation: string): () => void {
     const startTime = Date.now();
     const startMemory = process.memoryUsage();
-    
+
     return () => {
       const endTime = Date.now();
       const endMemory = process.memoryUsage();
       const duration = endTime - startTime;
-      
+
       const entry: PerformanceEntry = {
         timestamp: new Date(),
         level: LogLevel.INFO,
@@ -281,50 +294,52 @@ export class Logger implements ILogger {
         memoryUsage: {
           heapUsed: endMemory.heapUsed - startMemory.heapUsed,
           heapTotal: endMemory.heapTotal,
-          external: endMemory.external
-        }
+          external: endMemory.external,
+        },
       };
-      
+
       this.writeLog(entry);
     };
   }
-  
+
   logPerformance(entry: PerformanceEntry): void {
-    if (!this.config.enablePerformanceLogging) {return;}
-    
+    if (!this.config.enablePerformanceLogging) {
+      return;
+    }
+
     const performanceEntry: PerformanceEntry = {
       ...entry,
       context: { ...this.context, ...entry.context },
       requestId: this.requestId,
       sessionId: this.sessionId,
-      userId: this.userId
+      userId: this.userId,
     };
-    
+
     this.writeLog(performanceEntry);
   }
-  
+
   // Context management
   setContext(key: string, value: unknown): void {
     this.context[key] = value;
   }
-  
+
   getContext(): Record<string, unknown> {
     return { ...this.context };
   }
-  
+
   clearContext(): void {
     this.context = {};
   }
-  
+
   // Session and user ID setting
   setSessionId(sessionId: string): void {
     this.sessionId = sessionId;
   }
-  
+
   setUserId(userId: string): void {
     this.userId = userId;
   }
-  
+
   // Create child logger with additional context
   child(context: Record<string, unknown>): ILogger {
     const childLogger = new Logger(this.config);
@@ -334,4 +349,4 @@ export class Logger implements ILogger {
     childLogger.userId = this.userId;
     return childLogger;
   }
-} 
+}

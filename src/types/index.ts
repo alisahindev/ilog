@@ -4,7 +4,7 @@ export enum LogLevel {
   INFO = 1,
   WARN = 2,
   ERROR = 3,
-  FATAL = 4
+  FATAL = 4,
 }
 
 // HTTP methods
@@ -94,21 +94,27 @@ export interface ILogger {
   warn(message: string, context?: Record<string, any>): void;
   error(message: string, error?: Error, context?: Record<string, any>): void;
   fatal(message: string, error?: Error, context?: Record<string, any>): void;
-  
+
   // API logging methods
   logApiRequest(method: HttpMethod, url: string, options?: Partial<ApiLogEntry>): void;
-  logApiResponse(method: HttpMethod, url: string, statusCode: number, responseTime: number, options?: Partial<ApiLogEntry>): void;
+  logApiResponse(
+    method: HttpMethod,
+    url: string,
+    statusCode: number,
+    responseTime: number,
+    options?: Partial<ApiLogEntry>
+  ): void;
   logApiError(method: HttpMethod, url: string, error: Error, options?: Partial<ApiLogEntry>): void;
-  
+
   // Performance logging
   startTimer(operation: string): () => void;
   logPerformance(entry: PerformanceEntry): void;
-  
+
   // Context management
   setContext(key: string, value: any): void;
   getContext(): Record<string, any>;
   clearContext(): void;
-  
+
   // Create child logger
   child(context: Record<string, any>): ILogger;
-} 
+}

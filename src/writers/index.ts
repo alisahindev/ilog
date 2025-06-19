@@ -29,25 +29,41 @@ export class ConsoleWriter implements LogWriter {
 export class FileWriter implements LogWriter {
   private currentFileSize: number = 0;
   private fileIndex: number = 0;
-  
+
   constructor(
     private filePath: string,
     private maxFileSize: number = 10, // MB
     private maxFiles: number = 5
   ) {
+    // Security: Validate and sanitize file path
+    this.filePath = this.sanitizeFilePath(filePath);
     this.ensureDirectoryExists();
     this.initializeFileSize();
   }
-  
+
+  private sanitizeFilePath(filePath: string): string {
+    // Prevent path traversal attacks
+    const normalizedPath = path.normalize(filePath);
+
+    // Check for path traversal attempts
+    if (normalizedPath.includes('..') || normalizedPath.startsWith('/')) {
+      // Fallback to safe path in logs directory
+      const safeFileName = path.basename(filePath).replace(/[^a-zA-Z0-9.-]/g, '_');
+      return path.join('./logs', safeFileName);
+    }
+
+    return normalizedPath;
+  }
+
   async write(formattedLog: string): Promise<void> {
     const logLine = `${formattedLog}\n`;
     const logSize = Buffer.byteLength(logLine, 'utf8');
-    
+
     // File size check
     if (this.currentFileSize + logSize > this.maxFileSize * 1024 * 1024) {
       await this.rotateFile();
     }
-    
+
     try {
       await fs.promises.appendFile(this.getCurrentFilePath(), logLine);
       this.currentFileSize += logSize;
@@ -55,14 +71,14 @@ export class FileWriter implements LogWriter {
       console.error('Error writing to log file:', error);
     }
   }
-  
+
   private ensureDirectoryExists(): void {
     const dir = path.dirname(this.filePath);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
   }
-  
+
   private initializeFileSize(): void {
     const currentFile = this.getCurrentFilePath();
     if (fs.existsSync(currentFile)) {
@@ -70,7 +86,7 @@ export class FileWriter implements LogWriter {
       this.currentFileSize = stats.size;
     }
   }
-  
+
   private getCurrentFilePath(): string {
     if (this.fileIndex === 0) {
       return this.filePath;
@@ -80,13 +96,13 @@ export class FileWriter implements LogWriter {
     const dir = path.dirname(this.filePath);
     return path.join(dir, `${base}.${this.fileIndex}${ext}`);
   }
-  
+
   private async rotateFile(): Promise<void> {
     // Rotate old files
     for (let i = this.maxFiles - 1; i > 0; i--) {
       const oldFile = this.getFilePathWithIndex(i);
       const newFile = this.getFilePathWithIndex(i + 1);
-      
+
       if (fs.existsSync(oldFile)) {
         if (i === this.maxFiles - 1) {
           // Delete the oldest file
@@ -96,17 +112,17 @@ export class FileWriter implements LogWriter {
         }
       }
     }
-    
+
     // Rename current file to .1
     const currentFile = this.getCurrentFilePath();
     if (fs.existsSync(currentFile)) {
       const rotatedFile = this.getFilePathWithIndex(1);
       fs.renameSync(currentFile, rotatedFile);
     }
-    
+
     this.currentFileSize = 0;
   }
-  
+
   private getFilePathWithIndex(index: number): string {
     if (index === 0) {
       return this.filePath;
@@ -122,7 +138,7 @@ export class FileWriter implements LogWriter {
 export class BufferedWriter implements LogWriter {
   private buffer: string[] = [];
   private flushTimer?: NodeJS.Timeout;
-  
+
   constructor(
     private targetWriter: LogWriter,
     private bufferSize: number = 100,
@@ -130,33 +146,35 @@ export class BufferedWriter implements LogWriter {
   ) {
     this.scheduleFlush();
   }
-  
+
   write(formattedLog: string): void {
     this.buffer.push(formattedLog);
-    
+
     if (this.buffer.length >= this.bufferSize) {
       this.flush();
     }
   }
-  
+
   private scheduleFlush(): void {
     this.flushTimer = setTimeout(() => {
       this.flush();
       this.scheduleFlush();
     }, this.flushInterval);
   }
-  
+
   private async flush(): Promise<void> {
-    if (this.buffer.length === 0) {return;}
-    
+    if (this.buffer.length === 0) {
+      return;
+    }
+
     const logsToFlush = [...this.buffer];
     this.buffer = [];
-    
+
     for (const log of logsToFlush) {
       await this.targetWriter.write(log, LogLevel.INFO); // Level is not important here
     }
   }
-  
+
   // For graceful shutdown
   async close(): Promise<void> {
     if (this.flushTimer) {
@@ -172,18 +190,18 @@ export class HttpWriter implements LogWriter {
     private endpoint: string,
     private headers: Record<string, string> = {}
   ) {}
-  
+
   async write(formattedLog: string, level: LogLevel): Promise<void> {
     try {
       const response = await fetch(this.endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          ...this.headers
+          ...this.headers,
         },
-        body: JSON.stringify({ log: formattedLog, level })
+        body: JSON.stringify({ log: formattedLog, level }),
       });
-      
+
       if (!response.ok) {
         console.error('Failed to send log to HTTP endpoint:', response.statusText);
       }
@@ -191,4 +209,4 @@ export class HttpWriter implements LogWriter {
       console.error('Error sending log to HTTP endpoint:', error);
     }
   }
-} 
+}
