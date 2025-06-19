@@ -18,6 +18,7 @@ module.exports = {
     sourceType: 'module',
     project: './tsconfig.json'
   },
+  ignorePatterns: ['scripts/**/*.js', '.eslintrc.js'],
   env: {
     node: true,
     es2022: true,
@@ -68,6 +69,16 @@ module.exports = {
       rules: {
         'no-console': 'off' // Allow console in examples
       }
+    },
+    {
+      files: ['scripts/**/*.js'],
+      env: {
+        node: true
+      },
+      rules: {
+        '@typescript-eslint/no-var-requires': 'off'
+      }
     }
-  ]
+  ],
+  ignorePatterns: ['scripts/**/*.js']
 }; 

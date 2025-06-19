@@ -10,9 +10,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "npm run build:prod",
+    "build": "npm run build:prod && npm run build:package",
     "build:dev": "tsc -p tsconfig.build.json --sourceMap --declarationMap",
     "build:prod": "tsc -p tsconfig.build.json",
+    "build:package": "node scripts/build-package.js",
     "dev": "tsc --watch --sourceMap --declarationMap",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
