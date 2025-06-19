@@ -21,6 +21,7 @@
     "test:coverage": "playwright test --reporter=html",
     "example": "ts-node examples/basic-usage.ts",
     "example-advanced": "ts-node examples/advanced-usage.ts",
+    "prepare": "husky install",
     "prepublishOnly": "npm run build",
     "publish:github": "npm publish --registry=https://npm.pkg.github.com/",
     "publish:npm": "mv .npmrc .npmrc.backup 2>/dev/null || true && npm publish --registry=https://registry.npmjs.org/ && mv .npmrc.backup .npmrc 2>/dev/null || true",
@@ -91,12 +92,6 @@
   "peerDependenciesMeta": {
     "chalk": {
       "optional": true
-    }
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged",
-      "pre-push": "npm run validate"
     }
   },
   "lint-staged": {
