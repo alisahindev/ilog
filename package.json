@@ -1,5 +1,5 @@
 {
-  "name": "@sahin/ilog",
+  "name": "@alisahindev/ilog",
   "version": "1.0.0",
   "description": "Full type-supported logger for JavaScript/TypeScript projects with API logging, performance monitoring, and sensitive data masking",
   "main": "dist/index.js",
