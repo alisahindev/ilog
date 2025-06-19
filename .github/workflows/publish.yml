@@ -6,6 +6,10 @@ on:
     paths:
       - 'package.json'
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   check-version-change:
     runs-on: ubuntu-latest
@@ -47,6 +51,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: check-version-change
     if: needs.check-version-change.outputs.version-changed == 'true'
+    permissions:
+      contents: write
+      packages: write
     steps:
       - uses: actions/checkout@v4
       
@@ -86,12 +93,12 @@ jobs:
           echo "@alisahindev:registry=https://npm.pkg.github.com/" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      # NPM registry için token ayarla
+      # NPM registry için token ayarla  
       - name: Configure NPM registry
         run: |
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
 
-      # Publish
+      # Publish to registries
       - name: Publish to registries
         run: npm run publish:all
         env:
