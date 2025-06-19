@@ -39,6 +39,30 @@ export interface ApiLogEntry extends LogEntry {
   };
 }
 
+// Middleware context - additional data that can be passed through middleware chain
+export interface MiddlewareContext {
+  logger: ILogger;
+  config: LoggerConfig;
+  metadata: Record<string, any>;
+}
+
+// Middleware function type
+export type MiddlewareFunction = (
+  entry: LogEntry,
+  context: MiddlewareContext,
+  next: () => Promise<void> | void
+) => Promise<void> | void;
+
+// Middleware interface for class-based middleware
+export interface LogMiddleware {
+  name: string;
+  execute(
+    entry: LogEntry,
+    context: MiddlewareContext,
+    next: () => Promise<void> | void
+  ): Promise<void> | void;
+}
+
 // Log formatter interface
 export interface LogFormatter {
   format(entry: LogEntry): string;
@@ -62,6 +86,7 @@ export interface LoggerConfig {
   enableApiLogging: boolean;
   sensitiveFields?: string[]; // Sensitive fields to be masked
   enablePerformanceLogging: boolean;
+  middlewares?: (MiddlewareFunction | LogMiddleware)[];
 }
 
 // API interceptor configuration
@@ -114,6 +139,11 @@ export interface ILogger {
   setContext(key: string, value: any): void;
   getContext(): Record<string, any>;
   clearContext(): void;
+
+  // Middleware management
+  use(middleware: MiddlewareFunction | LogMiddleware): void;
+  removeMiddleware(middlewareName: string): void;
+  clearMiddlewares(): void;
 
   // Create child logger
   child(context: Record<string, any>): ILogger;

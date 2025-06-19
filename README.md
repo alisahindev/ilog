@@ -13,6 +13,7 @@ A comprehensive, fully type-supported logging library for JavaScript/TypeScript 
 - 🔄 **File Rotation** - Automatic log file rotation
 - 📦 **Modular Architecture** - Following separation of concerns principles
 - 🪝 **HTTP Interceptors** - Automatic capture for Fetch, Axios, XHR
+- ⚡ **Middleware System** - Extensible log processing pipeline
 
 ## Installation
 
@@ -136,6 +137,195 @@ const serviceLogger = logger.child({
 
 serviceLogger.info('Authentication successful');
 // Includes all parent context + service-specific context
+```
+
+## Middleware System
+
+iLog provides a powerful middleware system that allows you to intercept and modify log entries before they are processed. This enables advanced logging features like filtering, enrichment, metrics collection, and rate limiting.
+
+### Built-in Middleware
+
+#### Timestamp Middleware
+```typescript
+import { TimestampMiddleware } from '@sahin/ilog';
+
+const logger = createLogger();
+logger.use(new TimestampMiddleware({
+  format: 'iso', // 'iso', 'locale', or 'unix'
+  timezone: 'Europe/Istanbul'
+}));
+
+logger.info('Message with formatted timestamp');
+```
+
+#### Filter Middleware
+```typescript
+import { FilterMiddleware, LogLevel } from '@sahin/ilog';
+
+const filterMiddleware = new FilterMiddleware({
+  minLevel: LogLevel.INFO,
+  maxLevel: LogLevel.ERROR,
+  excludeMessages: ['debug', 'trace'],
+  includeMessages: ['important'],
+  excludeContextKeys: ['sensitive'],
+  includeContextKeys: ['userId']
+});
+
+logger.use(filterMiddleware);
+```
+
+#### Correlation ID Middleware
+```typescript
+import { CorrelationIdMiddleware } from '@sahin/ilog';
+
+const correlationMiddleware = new CorrelationIdMiddleware({
+  fieldName: 'traceId',
+  generateNew: false, // true to generate new ID for each log
+  idLength: 16
+});
+
+logger.use(correlationMiddleware);
+logger.info('Message with correlation ID');
+```
+
+#### Metrics Middleware
+```typescript
+import { MetricsMiddleware } from '@sahin/ilog';
+
+const metricsMiddleware = new MetricsMiddleware({
+  trackFrequency: true,
+  frequencyWindowMinutes: 5
+});
+
+logger.use(metricsMiddleware);
+
+// Get metrics
+const metrics = metricsMiddleware.getMetrics();
+console.log(metrics.totalLogs, metrics.errorCount, metrics.logFrequency);
+```
+
+#### Rate Limiting Middleware
+```typescript
+import { RateLimitMiddleware, LogLevel } from '@sahin/ilog';
+
+const rateLimitMiddleware = new RateLimitMiddleware({
+  maxLogsPerSecond: 10,
+  maxLogsPerMinute: 100,
+  maxLogsPerHour: 1000,
+  skipLevels: [LogLevel.FATAL], // Don't rate limit fatal errors
+  onRateLimitExceeded: (droppedCount) => {
+    console.warn(`Rate limit exceeded! Dropped ${droppedCount} logs`);
+  }
+});
+
+logger.use(rateLimitMiddleware);
+```
+
+### Custom Middleware
+
+#### Function-based Middleware
+```typescript
+import { Logger, MiddlewareFunction } from '@sahin/ilog';
+
+const enrichmentMiddleware: MiddlewareFunction = async (entry, context, next) => {
+  // Enrich log entry
+  entry.context = {
+    ...entry.context,
+    environment: process.env.NODE_ENV,
+    service: 'my-service',
+    version: '1.0.0'
+  };
+  
+  // Add metadata for other middleware
+  context.metadata.processedAt = new Date().toISOString();
+  
+  // Continue to next middleware
+  await next();
+};
+
+logger.use(enrichmentMiddleware);
+```
+
+#### Class-based Middleware
+```typescript
+import { LogMiddleware, LogEntry, MiddlewareContext } from '@sahin/ilog';
+
+class CustomMiddleware implements LogMiddleware {
+  name = 'CustomMiddleware';
+  
+  async execute(
+    entry: LogEntry,
+    context: MiddlewareContext,
+    next: () => Promise<void> | void
+  ): Promise<void> {
+    // Custom processing logic
+    if (entry.level >= LogLevel.ERROR) {
+      entry.context = {
+        ...entry.context,
+        alerting: true
+      };
+    }
+    
+    await next();
+  }
+}
+
+logger.use(new CustomMiddleware());
+```
+
+### Middleware Pipeline Management
+
+```typescript
+// Add middleware
+logger.use(new TimestampMiddleware());
+logger.use(new CorrelationIdMiddleware());
+
+// Remove specific middleware
+logger.removeMiddleware('TimestampMiddleware');
+
+// Clear all middleware
+logger.clearMiddlewares();
+
+// Child loggers inherit parent middleware
+const childLogger = logger.child({ component: 'auth' });
+```
+
+### Middleware Configuration at Logger Creation
+
+```typescript
+import { 
+  Logger, 
+  TimestampMiddleware, 
+  FilterMiddleware,
+  LogLevel 
+} from '@sahin/ilog';
+
+const logger = new Logger({
+  level: LogLevel.INFO,
+  enableConsole: true,
+  middlewares: [
+    new TimestampMiddleware({ format: 'iso' }),
+    new FilterMiddleware({ minLevel: LogLevel.INFO })
+  ]
+});
+```
+
+### Async Middleware Support
+
+```typescript
+const asyncMiddleware: MiddlewareFunction = async (entry, context, next) => {
+  // Async operations are fully supported
+  await someAsyncOperation();
+  
+  entry.context = {
+    ...entry.context,
+    asyncProcessed: true
+  };
+  
+  await next();
+};
+
+logger.use(asyncMiddleware);
 ```
 
 ## Custom Writers

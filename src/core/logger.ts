@@ -1,15 +1,18 @@
 import * as crypto from 'crypto';
 import { SimpleApiFormatter, SimpleTextFormatter } from '../formatters/simple';
 import {
-  ApiLogEntry,
-  HttpMethod,
-  ILogger,
-  LogEntry,
-  LogFormatter,
-  LoggerConfig,
-  LogLevel,
-  LogWriter,
-  PerformanceEntry,
+    ApiLogEntry,
+    HttpMethod,
+    ILogger,
+    LogEntry,
+    LogFormatter,
+    LoggerConfig,
+    LogLevel,
+    LogMiddleware,
+    LogWriter,
+    MiddlewareContext,
+    MiddlewareFunction,
+    PerformanceEntry
 } from '../types';
 import { maskSensitiveData, SensitiveDataMaskingOptions } from '../utils/sensitive-data';
 import { BufferedWriter, ConsoleWriter, FileWriter } from '../writers';
@@ -22,6 +25,7 @@ export class Logger implements ILogger {
   private requestId?: string;
   private sessionId?: string;
   private userId?: string;
+  private middlewares: (MiddlewareFunction | LogMiddleware)[] = [];
 
   constructor(config: Partial<LoggerConfig> = {}) {
     this.config = {
@@ -31,12 +35,37 @@ export class Logger implements ILogger {
       enableApiLogging: true,
       enablePerformanceLogging: true,
       sensitiveFields: ['password', 'token', 'key', 'secret'],
+      middlewares: [],
       ...config,
     };
 
     this.setupWriters();
     this.setupFormatter();
     this.generateRequestId();
+    this.setupMiddlewares();
+  }
+
+  use(middleware: MiddlewareFunction | LogMiddleware): void {
+    this.middlewares.push(middleware);
+  }
+
+  removeMiddleware(middlewareName: string): void {
+    this.middlewares = this.middlewares.filter(middleware => {
+      if (typeof middleware === 'function') {
+        return middleware.name !== middlewareName;
+      }
+      return middleware.name !== middlewareName;
+    });
+  }
+
+  clearMiddlewares(): void {
+    this.middlewares = [];
+  }
+
+  private setupMiddlewares(): void {
+    if (this.config.middlewares) {
+      this.middlewares = [...this.config.middlewares];
+    }
   }
 
   private setupWriters(): void {
@@ -92,6 +121,44 @@ export class Logger implements ILogger {
       return;
     }
 
+    // Create middleware context
+    const middlewareContext: MiddlewareContext = {
+      logger: this,
+      config: this.config,
+      metadata: {}
+    };
+
+    // Execute middleware pipeline
+    await this.executeMiddlewarePipeline(entry, middlewareContext);
+  }
+
+  private async executeMiddlewarePipeline(entry: LogEntry, context: MiddlewareContext): Promise<void> {
+    let index = 0;
+
+    const next = async (): Promise<void> => {
+      if (index >= this.middlewares.length) {
+        // Final step: process the log entry
+        await this.processLogEntry(entry);
+        return;
+      }
+
+      const middleware = this.middlewares[index++];
+      
+      if (middleware) {
+        if (typeof middleware === 'function') {
+          await middleware(entry, context, next);
+        } else {
+          await middleware.execute(entry, context, next);
+        }
+      } else {
+        await next();
+      }
+    };
+
+    await next();
+  }
+
+  private async processLogEntry(entry: LogEntry): Promise<void> {
     // Mask sensitive data
     const maskedEntry = this.maskSensitiveDataInEntry(entry);
 
@@ -347,6 +414,7 @@ export class Logger implements ILogger {
     childLogger.requestId = this.requestId;
     childLogger.sessionId = this.sessionId;
     childLogger.userId = this.userId;
+    childLogger.middlewares = [...this.middlewares]; // Copy middleware pipeline
     return childLogger;
   }
 }
