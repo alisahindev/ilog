@@ -1,6 +1,6 @@
 import { createLogger, FetchInterceptor, LogLevel } from '../src';
 
-// Temel logger kullanımı
+// Basic logger usage
 const logger = createLogger({
   level: LogLevel.DEBUG,
   enableConsole: true,
@@ -10,28 +10,28 @@ const logger = createLogger({
   sensitiveFields: ['password', 'token', 'email']
 });
 
-// Temel log örnekleri
-logger.info('Uygulama başlatıldı');
-logger.debug('Debug bilgisi', { userId: 123, action: 'login' });
-logger.warn('Uyarı mesajı');
-logger.error('Hata oluştu', new Error('Örnek hata'));
+// Basic log examples
+logger.info('Application started');
+logger.debug('Debug information', { userId: 123, action: 'login' });
+logger.warn('Warning message');
+logger.error('An error occurred', new Error('Sample error'));
 
-// Context ile çalışma
+// Working with context
 logger.setContext('requestId', 'req-123');
 logger.setUserId('user-456');
-logger.info('Context ile log');
+logger.info('Log with context');
 
 // Child logger
 const childLogger = logger.child({ component: 'auth-service' });
-childLogger.info('Auth service işlemi');
+childLogger.info('Auth service operation');
 
 // Performance logging
 const timer = logger.startTimer('database-query');
 setTimeout(() => {
-  timer(); // Performance logunu yazar
+  timer(); // Writes performance log
 }, 100);
 
-// API interceptor örneği
+// API interceptor example
 const fetchInterceptor = new FetchInterceptor(logger, {
   logRequests: true,
   logResponses: true,
@@ -41,7 +41,7 @@ const fetchInterceptor = new FetchInterceptor(logger, {
 
 fetchInterceptor.install();
 
-// Örnek API çağrısı (fetch otomatik loglanacak)
+// Sample API call (fetch will be automatically logged)
 setTimeout(async () => {
   try {
     const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
@@ -52,7 +52,7 @@ setTimeout(async () => {
   }
 }, 1000);
 
-// Manuel API logging
+// Manual API logging
 logger.logApiRequest('POST', '/api/users', {
   requestBody: { name: 'John', email: 'john@example.com', password: 'secret123' },
   requestHeaders: { 'Authorization': 'Bearer token123' }
@@ -65,4 +65,4 @@ logger.logApiResponse('POST', '/api/users', 201, 250, {
 // Error logging
 logger.logApiError('GET', '/api/users/999', new Error('User not found'));
 
-console.log('Logger örnekleri çalıştırılıyor...'); 
+console.log('Logger examples are running...'); 

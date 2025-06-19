@@ -7,8 +7,10 @@ export class ConsoleWriter implements LogWriter {
   write(formattedLog: string, level: LogLevel): void {
     switch (level) {
       case LogLevel.DEBUG:
+        console.debug(formattedLog);
+        break;
       case LogLevel.INFO:
-        console.log(formattedLog);
+        console.info(formattedLog);
         break;
       case LogLevel.WARN:
         console.warn(formattedLog);
@@ -17,6 +19,8 @@ export class ConsoleWriter implements LogWriter {
       case LogLevel.FATAL:
         console.error(formattedLog);
         break;
+      default:
+        console.log(formattedLog);
     }
   }
 }
@@ -39,7 +43,7 @@ export class FileWriter implements LogWriter {
     const logLine = `${formattedLog}\n`;
     const logSize = Buffer.byteLength(logLine, 'utf8');
     
-    // Dosya boyutu kontrolü
+    // File size check
     if (this.currentFileSize + logSize > this.maxFileSize * 1024 * 1024) {
       await this.rotateFile();
     }
@@ -48,7 +52,7 @@ export class FileWriter implements LogWriter {
       await fs.promises.appendFile(this.getCurrentFilePath(), logLine);
       this.currentFileSize += logSize;
     } catch (error) {
-      console.error('Log dosyasına yazma hatası:', error);
+      console.error('Error writing to log file:', error);
     }
   }
   
@@ -78,14 +82,14 @@ export class FileWriter implements LogWriter {
   }
   
   private async rotateFile(): Promise<void> {
-    // Eski dosyaları kaydır
+    // Rotate old files
     for (let i = this.maxFiles - 1; i > 0; i--) {
       const oldFile = this.getFilePathWithIndex(i);
       const newFile = this.getFilePathWithIndex(i + 1);
       
       if (fs.existsSync(oldFile)) {
         if (i === this.maxFiles - 1) {
-          // En eski dosyayı sil
+          // Delete the oldest file
           fs.unlinkSync(oldFile);
         } else {
           fs.renameSync(oldFile, newFile);
@@ -93,7 +97,7 @@ export class FileWriter implements LogWriter {
       }
     }
     
-    // Mevcut dosyayı .1 olarak yeniden adlandır
+    // Rename current file to .1
     const currentFile = this.getCurrentFilePath();
     if (fs.existsSync(currentFile)) {
       const rotatedFile = this.getFilePathWithIndex(1);
@@ -122,7 +126,7 @@ export class BufferedWriter implements LogWriter {
   constructor(
     private targetWriter: LogWriter,
     private bufferSize: number = 100,
-    private flushInterval: number = 5000 // 5 saniye
+    private flushInterval: number = 5000 // 5 seconds
   ) {
     this.scheduleFlush();
   }
@@ -149,11 +153,11 @@ export class BufferedWriter implements LogWriter {
     this.buffer = [];
     
     for (const log of logsToFlush) {
-      await this.targetWriter.write(log, LogLevel.INFO); // Level burada önemli değil
+      await this.targetWriter.write(log, LogLevel.INFO); // Level is not important here
     }
   }
   
-  // Graceful shutdown için
+  // For graceful shutdown
   async close(): Promise<void> {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
@@ -162,12 +166,11 @@ export class BufferedWriter implements LogWriter {
   }
 }
 
-// HTTP endpoint writer (webhook, logging service vs.)
+// HTTP writer for remote logging
 export class HttpWriter implements LogWriter {
   constructor(
     private endpoint: string,
-    private headers: Record<string, string> = {},
-    private batchSize: number = 10
+    private headers: Record<string, string> = {}
   ) {}
   
   async write(formattedLog: string, level: LogLevel): Promise<void> {
@@ -178,18 +181,14 @@ export class HttpWriter implements LogWriter {
           'Content-Type': 'application/json',
           ...this.headers
         },
-        body: JSON.stringify({
-          log: formattedLog,
-          level: LogLevel[level],
-          timestamp: new Date().toISOString()
-        })
+        body: JSON.stringify({ log: formattedLog, level })
       });
       
       if (!response.ok) {
-        console.error(`HTTP log writer error: ${response.status} ${response.statusText}`);
+        console.error('Failed to send log to HTTP endpoint:', response.statusText);
       }
     } catch (error) {
-      console.error('HTTP log writer network error:', error);
+      console.error('Error sending log to HTTP endpoint:', error);
     }
   }
 } 

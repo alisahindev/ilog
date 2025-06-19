@@ -1,4 +1,4 @@
-// Hassas veri alanları için varsayılan pattern'lar
+// Default patterns for sensitive data fields
 const DEFAULT_SENSITIVE_PATTERNS = [
   /password/i,
   /token/i,
@@ -17,7 +17,7 @@ const DEFAULT_SENSITIVE_PATTERNS = [
   /mobile/i
 ];
 
-// Hassas veri maskeleme seçenekleri
+// Sensitive data masking options
 export interface SensitiveDataMaskingOptions {
   sensitiveFields: string[];
   customPatterns?: RegExp[];
@@ -27,7 +27,7 @@ export interface SensitiveDataMaskingOptions {
   showLast?: number;
 }
 
-// Veriyi maskele
+// Main function for masking sensitive data in objects
 export function maskSensitiveData(
   data: any,
   options: SensitiveDataMaskingOptions
@@ -36,125 +36,123 @@ export function maskSensitiveData(
     return data;
   }
   
+  if (Array.isArray(data)) {
+    return data.map(item => maskSensitiveData(item, options));
+  }
+  
+  const result: any = {};
+  
+  for (const [key, value] of Object.entries(data)) {
+    if (shouldMaskField(key, options)) {
+      result[key] = maskValue(value, options);
+    } else if (typeof value === 'object' && value !== null) {
+      result[key] = maskSensitiveData(value, options);
+    } else {
+      result[key] = value;
+    }
+  }
+  
+  return result;
+}
+
+// Check if a field should be masked
+function shouldMaskField(fieldName: string, options: SensitiveDataMaskingOptions): boolean {
+  const { sensitiveFields, customPatterns = [] } = options;
+  
+  // Check explicit field names
+  if (sensitiveFields.some(field => 
+    fieldName.toLowerCase().includes(field.toLowerCase())
+  )) {
+    return true;
+  }
+  
+  // Check default patterns
+  if (DEFAULT_SENSITIVE_PATTERNS.some(pattern => pattern.test(fieldName))) {
+    return true;
+  }
+  
+  // Check custom patterns
+  if (customPatterns.some(pattern => pattern.test(fieldName))) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Mask a single value
+function maskValue(value: any, options: SensitiveDataMaskingOptions): string {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  
+  const str = String(value);
   const {
-    sensitiveFields,
-    customPatterns = [],
     maskCharacter = '*',
     preserveLength = true,
     showFirst = 0,
     showLast = 0
   } = options;
   
-  const allPatterns = [...DEFAULT_SENSITIVE_PATTERNS, ...customPatterns];
+  if (str.length <= showFirst + showLast) {
+    return preserveLength ? maskCharacter.repeat(str.length) : maskCharacter.repeat(3);
+  }
   
-  return maskObjectRecursively(
-    data,
-    sensitiveFields,
-    allPatterns,
-    maskCharacter,
-    preserveLength,
-    showFirst,
-    showLast
-  );
+  const firstPart = str.substring(0, showFirst);
+  const lastPart = str.substring(str.length - showLast);
+  const middleLength = preserveLength ? str.length - showFirst - showLast : 3;
+  const maskedMiddle = maskCharacter.repeat(middleLength);
+  
+  return firstPart + maskedMiddle + lastPart;
 }
 
-function maskObjectRecursively(
-  obj: any,
-  sensitiveFields: string[],
-  patterns: RegExp[],
-  maskChar: string,
-  preserveLength: boolean,
-  showFirst: number,
-  showLast: number
-): any {
-  if (obj === null || obj === undefined) {
-    return obj;
-  }
-  
-  if (Array.isArray(obj)) {
-    return obj.map(item => 
-      maskObjectRecursively(item, sensitiveFields, patterns, maskChar, preserveLength, showFirst, showLast)
-    );
-  }
-  
-  if (typeof obj !== 'object') {
-    return obj;
-  }
-  
-  const masked: any = {};
-  
-  for (const [key, value] of Object.entries(obj)) {
-    if (shouldMaskField(key, sensitiveFields, patterns)) {
-      masked[key] = maskValue(value, maskChar, preserveLength, showFirst, showLast);
-    } else if (typeof value === 'object') {
-      masked[key] = maskObjectRecursively(
-        value, 
-        sensitiveFields, 
-        patterns, 
-        maskChar, 
-        preserveLength, 
-        showFirst, 
-        showLast
-      );
-    } else {
-      masked[key] = value;
+// URL parameter masking function
+export function maskUrlParameters(url: string, sensitiveParams: string[]): string {
+  try {
+    const urlObj = new URL(url);
+    
+    for (const param of sensitiveParams) {
+      if (urlObj.searchParams.has(param)) {
+        const value = urlObj.searchParams.get(param);
+        if (value) {
+          const maskedValue = maskValue(value, {
+            sensitiveFields: [],
+            showFirst: 1,
+            showLast: 1
+          });
+          urlObj.searchParams.set(param, maskedValue);
+        }
+      }
     }
+    
+    return urlObj.toString();
+  } catch (error) {
+    // If URL parsing fails, return original
+    return url;
   }
-  
-  return masked;
 }
 
-function shouldMaskField(
-  fieldName: string,
-  sensitiveFields: string[],
-  patterns: RegExp[]
-): boolean {
-  // Exact match kontrolü
-  if (sensitiveFields.includes(fieldName.toLowerCase())) {
-    return true;
+// Credit card masking function
+export function maskCreditCard(cardNumber: string): string {
+  if (!cardNumber) {
+    return cardNumber;
   }
   
-  // Pattern match kontrolü
-  return patterns.some(pattern => pattern.test(fieldName));
+  // Remove spaces and dashes
+  const cleanCard = cardNumber.replace(/[\s-]/g, '');
+  
+  if (cleanCard.length < 8) {
+    return '*'.repeat(cleanCard.length);
+  }
+  
+  // Show first 4 and last 4 digits
+  const firstFour = cleanCard.substring(0, 4);
+  const lastFour = cleanCard.substring(cleanCard.length - 4);
+  const middleLength = cleanCard.length - 8;
+  
+  return `${firstFour}${'*'.repeat(middleLength)}${lastFour}`;
 }
 
-function maskValue(
-  value: any,
-  maskChar: string,
-  preserveLength: boolean,
-  showFirst: number,
-  showLast: number
-): string {
-  if (value === null || value === undefined) {
-    return value;
-  }
-  
-  const stringValue = String(value);
-  
-  if (stringValue.length === 0) {
-    return stringValue;
-  }
-  
-  if (!preserveLength) {
-    return '***';
-  }
-  
-  const totalLength = stringValue.length;
-  const visibleLength = showFirst + showLast;
-  
-  if (visibleLength >= totalLength) {
-    return stringValue;
-  }
-  
-  const maskLength = totalLength - visibleLength;
-  const firstPart = stringValue.substring(0, showFirst);
-  const lastPart = stringValue.substring(totalLength - showLast);
-  const maskPart = maskChar.repeat(maskLength);
-  
-  return firstPart + maskPart + lastPart;
-}
-
-// Email maskeleme için özel fonksiyon
+// Email masking function
 export function maskEmail(email: string): string {
   if (!email || !email.includes('@')) {
     return email;
@@ -166,36 +164,4 @@ export function maskEmail(email: string): string {
     : '*'.repeat(localPart.length);
     
   return `${maskedLocal}@${domain}`;
-}
-
-// Kredi kartı maskeleme için özel fonksiyon
-export function maskCreditCard(cardNumber: string): string {
-  if (!cardNumber) return cardNumber;
-  
-  const cleaned = cardNumber.replace(/\D/g, '');
-  if (cleaned.length < 4) return cardNumber;
-  
-  const lastFour = cleaned.slice(-4);
-  const masked = '*'.repeat(cleaned.length - 4);
-  
-  return masked + lastFour;
-}
-
-// URL'deki hassas parametreleri maskele
-export function maskUrlParameters(url: string, sensitiveParams: string[] = []): string {
-  try {
-    const urlObj = new URL(url);
-    const allSensitiveParams = [...sensitiveParams, 'token', 'key', 'password', 'secret'];
-    
-    for (const [key, value] of urlObj.searchParams.entries()) {
-      if (allSensitiveParams.some(param => key.toLowerCase().includes(param.toLowerCase()))) {
-        urlObj.searchParams.set(key, '***');
-      }
-    }
-    
-    return urlObj.toString();
-  } catch {
-    // Geçersiz URL ise orijinalini döndür
-    return url;
-  }
 } 

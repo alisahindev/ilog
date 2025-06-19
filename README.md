@@ -1,33 +1,33 @@
 # iLog - TypeScript Logger
 
-JavaScript/TypeScript projeleriniz için tam type destekli, gelişmiş bir logging kütüphanesi. API çağrılarını, performance metriklerini ve uygulama loglarını kolayca yönetmenizi sağlar.
+A comprehensive, fully type-supported logging library for JavaScript/TypeScript projects. Easily manage API calls, performance metrics, and application logs with advanced features.
 
-## Özellikler
+## Features
 
-- 🎯 **Full TypeScript Support** - Tam tip güvenliği
-- 🚀 **API Logging** - Otomatik HTTP request/response loglama
-- 📊 **Performance Monitoring** - İşlem sürelerini ve memory kullanımını takip
-- 🔒 **Sensitive Data Masking** - Hassas verileri otomatik maskeleme
-- 📁 **Multiple Writers** - Console, dosya, HTTP endpoint desteği
+- 🎯 **Full TypeScript Support** - Complete type safety
+- 🚀 **API Logging** - Automatic HTTP request/response logging
+- 📊 **Performance Monitoring** - Track operation times and memory usage
+- 🔒 **Sensitive Data Masking** - Automatic masking of sensitive information
+- 📁 **Multiple Writers** - Console, file, HTTP endpoint support
 - 🎨 **Flexible Formatting** - JSON, Pretty, API-specific formatters
-- 🔄 **File Rotation** - Otomatik log dosyası döndürme
-- 📦 **Modular Architecture** - Separation of concerns prensiplerine uygun
-- 🪝 **HTTP Interceptors** - Fetch, Axios, XHR otomatik yakalama
+- 🔄 **File Rotation** - Automatic log file rotation
+- 📦 **Modular Architecture** - Following separation of concerns principles
+- 🪝 **HTTP Interceptors** - Automatic capture for Fetch, Axios, XHR
 
-## Kurulum
+## Installation
 
 ```bash
-npm install ilog
-# veya
-yarn add ilog
+npm install @sahin/ilog
+# or
+yarn add @sahin/ilog
 ```
 
-## Hızlı Başlangıç
+## Quick Start
 
 ```typescript
-import { createLogger, LogLevel } from 'ilog';
+import { createLogger, LogLevel } from '@sahin/ilog';
 
-// Basit kullanım
+// Basic usage
 const logger = createLogger({
   level: LogLevel.INFO,
   enableConsole: true,
@@ -35,8 +35,8 @@ const logger = createLogger({
   filePath: './logs/app.log'
 });
 
-logger.info('Uygulama başlatıldı');
-logger.error('Bir hata oluştu', new Error('Örnek hata'));
+logger.info('Application started');
+logger.error('An error occurred', new Error('Sample error'));
 ```
 
 ## API Logging
@@ -44,9 +44,9 @@ logger.error('Bir hata oluştu', new Error('Örnek hata'));
 ### Automatic Interceptors
 
 ```typescript
-import { FetchInterceptor, AxiosInterceptor } from 'ilog';
+import { FetchInterceptor, AxiosInterceptor } from '@sahin/ilog';
 
-// Fetch API için otomatik loglama
+// Automatic logging for Fetch API
 const fetchInterceptor = new FetchInterceptor(logger, {
   logRequests: true,
   logResponses: true,
@@ -56,14 +56,14 @@ const fetchInterceptor = new FetchInterceptor(logger, {
 
 fetchInterceptor.install();
 
-// Artık tüm fetch çağrıları otomatik loglanacak
+// Now all fetch calls will be automatically logged
 fetch('/api/users').then(response => response.json());
 ```
 
 ### Manual API Logging
 
 ```typescript
-// Manuel API loglama
+// Manual API logging
 logger.logApiRequest('POST', '/api/users', {
   requestBody: { name: 'John', email: 'john@example.com' },
   requestHeaders: { 'Content-Type': 'application/json' }
@@ -98,10 +98,10 @@ logger.logPerformance({
 });
 ```
 
-## Hassas Veri Maskeleme
+## Sensitive Data Masking
 
 ```typescript
-import { maskSensitiveData } from 'ilog';
+import { maskSensitiveData } from '@sahin/ilog';
 
 const userData = {
   name: 'John Doe',
@@ -141,11 +141,11 @@ serviceLogger.info('Authentication successful');
 ## Custom Writers
 
 ```typescript
-import { HttpWriter, FileWriter, BufferedWriter } from 'ilog';
+import { HttpWriter, FileWriter, BufferedWriter } from '@sahin/ilog';
 
 const logger = createLogger({
   customWriters: [
-    // HTTP endpoint'e log gönderme
+    // Send logs to HTTP endpoint
     new HttpWriter('https://logs.yourservice.com/api/logs', {
       'Authorization': 'Bearer your-token'
     }),
@@ -163,7 +163,7 @@ const logger = createLogger({
 ## Advanced Configuration
 
 ```typescript
-import { Logger, LogLevel, JsonFormatter, ApiFormatter } from 'ilog';
+import { Logger, LogLevel, JsonFormatter, ApiFormatter } from '@sahin/ilog';
 
 const logger = new Logger({
   level: LogLevel.DEBUG,
@@ -172,7 +172,7 @@ const logger = new Logger({
   filePath: './logs/app.log',
   maxFileSize: 10, // MB
   maxFiles: 5,
-  formatter: new JsonFormatter(), // veya ApiFormatter, PrettyFormatter
+  formatter: new JsonFormatter(), // or ApiFormatter, PrettyFormatter
   enableApiLogging: true,
   enablePerformanceLogging: true,
   sensitiveFields: ['password', 'token', 'ssn', 'creditCard']
@@ -193,7 +193,7 @@ logger.fatal('Fatal message');    // LogLevel.FATAL
 
 ### Pretty Formatter (Development)
 ```typescript
-import { PrettyFormatter } from 'ilog';
+import { PrettyFormatter } from '@sahin/ilog';
 
 const logger = createLogger({
   formatter: new PrettyFormatter()
@@ -203,7 +203,7 @@ const logger = createLogger({
 
 ### JSON Formatter (Production)
 ```typescript
-import { JsonFormatter } from 'ilog';
+import { JsonFormatter } from '@sahin/ilog';
 
 const logger = createLogger({
   formatter: new JsonFormatter()
@@ -213,7 +213,7 @@ const logger = createLogger({
 
 ### API Formatter
 ```typescript
-import { ApiFormatter } from 'ilog';
+import { ApiFormatter } from '@sahin/ilog';
 
 const logger = createLogger({
   formatter: new ApiFormatter()
@@ -289,20 +289,76 @@ try {
 - `child(context)` - Create child logger
 
 ### Interceptors
-- `FetchInterceptor` - Fetch API otomatik yakalama
-- `AxiosInterceptor` - Axios otomatik yakalama  
-- `XHRInterceptor` - XMLHttpRequest otomatik yakalama
+- `FetchInterceptor` - Automatic Fetch API capture
+- `AxiosInterceptor` - Automatic Axios capture  
+- `XHRInterceptor` - Automatic XMLHttpRequest capture
 
 ### Utilities
-- `maskSensitiveData(data, options)` - Hassas veri maskeleme
-- `maskEmail(email)` - Email maskeleme
-- `maskCreditCard(cardNumber)` - Kredi kartı maskeleme
-- `maskUrlParameters(url, sensitiveParams)` - URL parametre maskeleme
+- `maskSensitiveData(data, options)` - Sensitive data masking
+- `maskEmail(email)` - Email masking
+- `maskCreditCard(cardNumber)` - Credit card masking
+- `maskUrlParameters(url, sensitiveParams)` - URL parameter masking
 
-## Lisans
+## TypeScript Support
 
-MIT
+This library is written in TypeScript and provides full type definitions. All methods are properly typed with generics and interfaces to ensure type safety in your applications.
 
-## Katkıda Bulunma
+```typescript
+// Fully typed logger configuration
+const config: LoggerConfig = {
+  level: LogLevel.INFO,
+  enableConsole: true,
+  enableFile: true,
+  filePath: './logs/app.log'
+};
 
-Katkılarınızı bekliyoruz! Lütfen pull request göndermeden önce test ekleyin ve dokümantasyonu güncelleyin. # ilog
+// Type-safe context
+interface UserContext {
+  userId: string;
+  sessionId: string;
+  ip: string;
+}
+
+const userLogger = logger.child<UserContext>({
+  userId: '123',
+  sessionId: 'sess-456',
+  ip: '192.168.1.1'
+});
+```
+
+## Examples
+
+Check out the `examples/` directory for comprehensive usage examples:
+
+- `basic-usage.ts` - Basic logging patterns
+- `advanced-usage.ts` - Advanced features and configurations
+
+## Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for your changes
+4. Update documentation
+5. Submit a pull request
+
+## License
+
+MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/ilog/issues)
+- Documentation: [Full API documentation](https://github.com/yourusername/ilog#readme)
+
+## Changelog
+
+### v1.0.0
+- Initial release
+- Full TypeScript support
+- API logging with interceptors
+- Performance monitoring
+- Sensitive data masking
+- Multiple output writers
+- Flexible formatting options

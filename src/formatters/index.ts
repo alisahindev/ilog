@@ -1,7 +1,7 @@
 const chalk = require('chalk');
 import { ApiLogEntry, LogEntry, LogFormatter, LogLevel, PerformanceEntry } from '../types';
 
-// Renk haritası
+// Color mapping
 const levelColors = {
   [LogLevel.DEBUG]: chalk.gray,
   [LogLevel.INFO]: chalk.blue,
@@ -10,23 +10,22 @@ const levelColors = {
   [LogLevel.FATAL]: chalk.magenta.bold
 };
 
-// Seviye isimlerini alma
+// Get level names
 const getLevelName = (level: LogLevel): string => {
   return LogLevel[level];
 };
 
-// JSON formatter
-export class JsonFormatter implements LogFormatter {
-  format(entry: LogEntry): string {
-    return JSON.stringify({
-      ...entry,
-      timestamp: entry.timestamp.toISOString(),
-      level: getLevelName(entry.level)
-    });
-  }
+// Check if entry is API log entry
+function isApiLogEntry(entry: LogEntry): entry is ApiLogEntry {
+  return 'method' in entry && 'url' in entry;
 }
 
-// Pretty formatter (development için)
+// Check if entry is performance entry
+function isPerformanceEntry(entry: LogEntry): entry is PerformanceEntry {
+  return 'operation' in entry && 'duration' in entry;
+}
+
+// Pretty formatter (for development)
 export class PrettyFormatter implements LogFormatter {
   format(entry: LogEntry): string {
     const level = getLevelName(entry.level);
@@ -35,17 +34,17 @@ export class PrettyFormatter implements LogFormatter {
     
     let output = `${chalk.dim(timestamp)} ${colorFn(`[${level}]`)} ${entry.message}`;
     
-    // Context bilgilerini ekle
+    // Add context information
     if (entry.context && Object.keys(entry.context).length > 0) {
       output += `\n${chalk.dim('Context:')} ${JSON.stringify(entry.context, null, 2)}`;
     }
     
-    // Tags ekle
+    // Add tags
     if (entry.tags && entry.tags.length > 0) {
       output += `\n${chalk.dim('Tags:')} ${entry.tags.map(tag => chalk.cyan(`#${tag}`)).join(' ')}`;
     }
     
-    // Request ID ekle
+    // Add request ID
     if (entry.requestId) {
       output += `\n${chalk.dim('Request ID:')} ${chalk.green(entry.requestId)}`;
     }
@@ -54,10 +53,49 @@ export class PrettyFormatter implements LogFormatter {
   }
 }
 
+// JSON formatter (for production)
+export class JsonFormatter implements LogFormatter {
+  format(entry: LogEntry): string {
+    const logObject = {
+      timestamp: entry.timestamp.toISOString(),
+      level: getLevelName(entry.level),
+      message: entry.message,
+      ...(entry.context && { context: entry.context }),
+      ...(entry.tags && { tags: entry.tags }),
+      ...(entry.requestId && { requestId: entry.requestId }),
+      ...(entry.userId && { userId: entry.userId }),
+      ...(entry.sessionId && { sessionId: entry.sessionId }),
+      
+      // API-specific fields
+      ...(isApiLogEntry(entry) && {
+        method: entry.method,
+        url: entry.url,
+        ...(entry.statusCode && { statusCode: entry.statusCode }),
+        ...(entry.responseTime && { responseTime: entry.responseTime }),
+        ...(entry.requestHeaders && { requestHeaders: entry.requestHeaders }),
+        ...(entry.responseHeaders && { responseHeaders: entry.responseHeaders }),
+        ...(entry.requestBody && { requestBody: entry.requestBody }),
+        ...(entry.responseBody && { responseBody: entry.responseBody }),
+        ...(entry.errorDetails && { errorDetails: entry.errorDetails })
+      }),
+      
+      // Performance-specific fields
+      ...(isPerformanceEntry(entry) && {
+        operation: entry.operation,
+        duration: entry.duration,
+        ...(entry.memoryUsage && { memoryUsage: entry.memoryUsage }),
+        ...(entry.customMetrics && { customMetrics: entry.customMetrics })
+      })
+    };
+    
+    return JSON.stringify(logObject);
+  }
+}
+
 // API-specific formatter
 export class ApiFormatter implements LogFormatter {
   format(entry: LogEntry): string {
-    if (!this.isApiLogEntry(entry)) {
+    if (!isApiLogEntry(entry)) {
       return new PrettyFormatter().format(entry);
     }
     
@@ -66,106 +104,78 @@ export class ApiFormatter implements LogFormatter {
     const colorFn = levelColors[entry.level];
     const timestamp = entry.timestamp.toISOString();
     
+    // Status code color
+    const statusColor = apiEntry.statusCode 
+      ? (apiEntry.statusCode >= 400 ? chalk.red : apiEntry.statusCode >= 300 ? chalk.yellow : chalk.green)
+      : chalk.white;
+    
     let output = `${chalk.dim(timestamp)} ${colorFn(`[${level}]`)} `;
-    output += `${this.getMethodColor(apiEntry.method)}${apiEntry.method}${chalk.reset()} `;
-    output += `${chalk.underline(apiEntry.url)}`;
+    output += `${chalk.cyan(apiEntry.method)} ${chalk.white(apiEntry.url)}`;
     
     if (apiEntry.statusCode) {
-      output += ` ${this.getStatusColor(apiEntry.statusCode)}${apiEntry.statusCode}${chalk.reset()}`;
+      output += ` ${statusColor(apiEntry.statusCode)}`;
     }
     
     if (apiEntry.responseTime) {
-      output += ` ${chalk.dim(`(${apiEntry.responseTime}ms)`)}`;
+      const timeColor = apiEntry.responseTime > 1000 ? chalk.red : apiEntry.responseTime > 500 ? chalk.yellow : chalk.green;
+      output += ` ${timeColor(`${apiEntry.responseTime}ms`)}`;
     }
-    
-    output += `\n${entry.message}`;
     
     // Error details
     if (apiEntry.errorDetails) {
-      output += `\n${chalk.red('Error Details:')}`;
-      if (apiEntry.errorDetails.code) {
-        output += `\n  Code: ${apiEntry.errorDetails.code}`;
-      }
+      output += `\n${chalk.red('Error:')} ${apiEntry.errorDetails.code || 'Unknown'}`;
       if (apiEntry.errorDetails.stack) {
-        output += `\n  Stack: ${chalk.dim(apiEntry.errorDetails.stack)}`;
+        output += `\n${chalk.dim(apiEntry.errorDetails.stack)}`;
       }
     }
     
-    // Request/Response bodies (eğer çok büyük değilse)
-    if (apiEntry.requestBody && JSON.stringify(apiEntry.requestBody).length < 1000) {
-      output += `\n${chalk.dim('Request Body:')} ${JSON.stringify(apiEntry.requestBody, null, 2)}`;
+    // Request/Response bodies (limited size)
+    if (apiEntry.requestBody && JSON.stringify(apiEntry.requestBody).length < 500) {
+      output += `\n${chalk.dim('Request:')} ${JSON.stringify(apiEntry.requestBody, null, 2)}`;
     }
     
-    if (apiEntry.responseBody && JSON.stringify(apiEntry.responseBody).length < 1000) {
-      output += `\n${chalk.dim('Response Body:')} ${JSON.stringify(apiEntry.responseBody, null, 2)}`;
+    if (apiEntry.responseBody && JSON.stringify(apiEntry.responseBody).length < 500) {
+      output += `\n${chalk.dim('Response:')} ${JSON.stringify(apiEntry.responseBody, null, 2)}`;
     }
     
     return output;
   }
-  
-  private isApiLogEntry(entry: LogEntry): entry is ApiLogEntry {
-    return 'method' in entry && 'url' in entry;
-  }
-  
-  private getMethodColor(method: string): string {
-    const methodColors: Record<string, (str: string) => string> = {
-      GET: chalk.green,
-      POST: chalk.blue,
-      PUT: chalk.yellow,
-      DELETE: chalk.red,
-      PATCH: chalk.magenta,
-      HEAD: chalk.gray,
-      OPTIONS: chalk.cyan
-    };
-    
-    return methodColors[method] ? methodColors[method](method) : method;
-  }
-  
-  private getStatusColor(status: number): (str: string) => string {
-    if (status >= 200 && status < 300) return chalk.green;
-    if (status >= 300 && status < 400) return chalk.yellow;
-    if (status >= 400 && status < 500) return chalk.red;
-    if (status >= 500) return chalk.magenta;
-    return chalk.gray;
-  }
 }
 
-// Performance formatter
+// Performance-specific formatter
 export class PerformanceFormatter implements LogFormatter {
   format(entry: LogEntry): string {
-    if (!this.isPerformanceEntry(entry)) {
+    if (!isPerformanceEntry(entry)) {
       return new PrettyFormatter().format(entry);
     }
     
     const perfEntry = entry as PerformanceEntry;
     const timestamp = entry.timestamp.toISOString();
     
-    let output = `${chalk.dim(timestamp)} ${chalk.cyan('[PERF]')} `;
-    output += `${chalk.bold(perfEntry.operation)} `;
-    output += `${this.getDurationColor(perfEntry.duration)}${perfEntry.duration}ms${chalk.reset()}`;
+    // Duration color based on performance
+    const durationColor = perfEntry.duration > 1000 
+      ? chalk.red 
+      : perfEntry.duration > 500 
+        ? chalk.yellow 
+        : chalk.green;
+    
+    let output = `${chalk.dim(timestamp)} ${chalk.magenta('[PERF]')} `;
+    output += `${chalk.white(perfEntry.operation)} `;
+    output += `${durationColor(`${perfEntry.duration}ms`)}`;
     
     if (perfEntry.memoryUsage) {
-      const heapMB = (perfEntry.memoryUsage.heapUsed / 1024 / 1024).toFixed(2);
-      output += ` ${chalk.dim(`(Heap: ${heapMB}MB)`)}`;
+      const memMB = (perfEntry.memoryUsage.heapUsed / 1024 / 1024).toFixed(2);
+      const memColor = parseFloat(memMB) > 100 ? chalk.red : parseFloat(memMB) > 50 ? chalk.yellow : chalk.green;
+      output += ` ${memColor(`${memMB}MB`)}`;
     }
     
-    output += `\n${entry.message}`;
-    
-    if (perfEntry.customMetrics && Object.keys(perfEntry.customMetrics).length > 0) {
-      output += `\n${chalk.dim('Metrics:')} ${JSON.stringify(perfEntry.customMetrics, null, 2)}`;
+    if (perfEntry.customMetrics) {
+      const metrics = Object.entries(perfEntry.customMetrics)
+        .map(([key, value]) => `${chalk.cyan(key)}: ${chalk.white(value)}`)
+        .join(' ');
+      output += ` ${metrics}`;
     }
     
     return output;
-  }
-  
-  private isPerformanceEntry(entry: LogEntry): entry is PerformanceEntry {
-    return 'operation' in entry && 'duration' in entry;
-  }
-  
-  private getDurationColor(duration: number): (str: string) => string {
-    if (duration < 100) return chalk.green;
-    if (duration < 500) return chalk.yellow;
-    if (duration < 1000) return chalk.red;
-    return chalk.magenta;
   }
 } 

@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import { SimpleApiFormatter, SimplePerformanceFormatter, SimpleTextFormatter } from '../formatters/simple';
+import { SimpleApiFormatter, SimpleTextFormatter } from '../formatters/simple';
 import {
   ApiLogEntry,
   HttpMethod,
@@ -84,13 +84,13 @@ export class Logger implements ILogger {
       return;
     }
     
-    // Hassas verileri maskele
+    // Mask sensitive data
     const maskedEntry = this.maskSensitiveDataInEntry(entry);
     
-    // Log formatla
+    // Format log
     const formattedLog = this.formatter.format(maskedEntry);
     
-    // Tüm writer'lara yaz
+    // Write to all writers
     const writePromises = this.writers.map(writer => 
       writer.write(formattedLog, entry.level)
     );
@@ -112,11 +112,11 @@ export class Logger implements ILogger {
     return {
       ...entry,
       context: entry.context ? maskSensitiveData(entry.context, maskingOptions) : entry.context,
-      message: entry.message // Message'ı maskeleme, sadece context'i
+      message: entry.message // Don't mask message, only context
     };
   }
   
-  // Temel log metodları
+  // Basic log methods
   debug(message: string, context?: Record<string, any>): void {
     this.log(LogLevel.DEBUG, message, context);
   }
@@ -165,7 +165,7 @@ export class Logger implements ILogger {
     this.writeLog(entry);
   }
   
-  // API logging metodları
+  // API logging methods
   logApiRequest(method: HttpMethod, url: string, options: Partial<ApiLogEntry> = {}): void {
     if (!this.config.enableApiLogging) return;
     
@@ -229,7 +229,7 @@ export class Logger implements ILogger {
       sessionId: this.sessionId,
       userId: this.userId,
       errorDetails: {
-        code: error.name,
+        code: (error as any).code,
         stack: error.stack,
         cause: (error as any).cause
       }
@@ -238,50 +238,52 @@ export class Logger implements ILogger {
     this.writeLog(entry);
   }
   
-  // Performance logging
+  // Performance monitoring
   startTimer(operation: string): () => void {
     const startTime = Date.now();
     const startMemory = process.memoryUsage();
     
     return () => {
-      const duration = Date.now() - startTime;
+      const endTime = Date.now();
       const endMemory = process.memoryUsage();
+      const duration = endTime - startTime;
       
       const entry: PerformanceEntry = {
         timestamp: new Date(),
         level: LogLevel.INFO,
-        message: `Performance: ${operation} completed`,
+        message: `Performance: ${operation} completed in ${duration}ms`,
         operation,
         duration,
+        context: { ...this.context },
+        requestId: this.requestId,
+        sessionId: this.sessionId,
+        userId: this.userId,
         memoryUsage: {
           heapUsed: endMemory.heapUsed - startMemory.heapUsed,
           heapTotal: endMemory.heapTotal,
           external: endMemory.external
-        },
-        context: this.context,
-        requestId: this.requestId,
-        sessionId: this.sessionId,
-        userId: this.userId
+        }
       };
       
-      this.logPerformance(entry);
+      this.writeLog(entry);
     };
   }
   
   logPerformance(entry: PerformanceEntry): void {
     if (!this.config.enablePerformanceLogging) return;
     
-    // Performance için özel formatter kullan
-    const originalFormatter = this.formatter;
-    this.formatter = new SimplePerformanceFormatter();
+    const performanceEntry: PerformanceEntry = {
+      ...entry,
+      context: { ...this.context, ...entry.context },
+      requestId: this.requestId,
+      sessionId: this.sessionId,
+      userId: this.userId
+    };
     
-    this.writeLog(entry);
-    
-    // Orijinal formatter'ı geri getir
-    this.formatter = originalFormatter;
+    this.writeLog(performanceEntry);
   }
   
-  // Context yönetimi
+  // Context management
   setContext(key: string, value: any): void {
     this.context[key] = value;
   }
@@ -294,7 +296,7 @@ export class Logger implements ILogger {
     this.context = {};
   }
   
-  // Session ve user ID ayarlama
+  // Session and user ID setting
   setSessionId(sessionId: string): void {
     this.sessionId = sessionId;
   }
@@ -303,7 +305,7 @@ export class Logger implements ILogger {
     this.userId = userId;
   }
   
-  // Child logger oluşturma
+  // Create child logger with additional context
   child(context: Record<string, any>): ILogger {
     const childLogger = new Logger(this.config);
     childLogger.context = { ...this.context, ...context };

@@ -1,24 +1,49 @@
 {
-  "name": "ilog",
+  "name": "@sahin/ilog",
   "version": "1.0.0",
-  "description": "Full type-supported logger for JavaScript/TypeScript projects",
+  "description": "Full type-supported logger for JavaScript/TypeScript projects with API logging, performance monitoring, and sensitive data masking",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
-    "example": "ts-node examples/basic-usage.ts"
+    "example": "ts-node examples/basic-usage.ts",
+    "example-advanced": "ts-node examples/advanced-usage.ts",
+    "prepublishOnly": "npm run build",
+    "clean": "rm -rf dist"
   },
   "keywords": [
     "logger",
     "typescript",
     "api",
     "logging",
-    "monitoring"
+    "monitoring",
+    "performance",
+    "interceptor",
+    "masking",
+    "structured-logging",
+    "nodejs",
+    "javascript"
   ],
-  "author": "ali.sahin@trendyol.com",
+  "author": "Ali Sahin <ali.sahin@trendyol.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/ilog.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/ilog/issues"
+  },
+  "homepage": "https://github.com/yourusername/ilog#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0",

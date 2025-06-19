@@ -1,151 +1,196 @@
 import {
-    HttpWriter,
-    JsonFormatter,
-    Logger,
-    LogLevel,
-    maskSensitiveData
+  BufferedWriter,
+  FetchInterceptor,
+  FileWriter,
+  JsonFormatter,
+  Logger,
+  LogLevel,
+  maskSensitiveData
 } from '../src';
 
-// Özel konfigürasyon ile logger
+// Advanced logger configuration
 const customLogger = new Logger({
-  level: LogLevel.INFO,
-  enableConsole: false,
+  level: LogLevel.DEBUG,
+  enableConsole: true,
   enableFile: true,
-  filePath: './logs/custom.log',
+  filePath: './logs/advanced.log',
   maxFileSize: 5, // 5MB
-  maxFiles: 3,
+  maxFiles: 10,
   formatter: new JsonFormatter(),
+  enableApiLogging: true,
+  enablePerformanceLogging: true,
+  sensitiveFields: ['password', 'token', 'ssn', 'creditCard', 'apiKey'],
   customWriters: [
-    new HttpWriter('https://your-logging-service.com/logs', {
-      'Authorization': 'Bearer your-token',
-      'X-Service': 'your-app'
-    })
-  ],
-  sensitiveFields: ['password', 'creditCard', 'ssn', 'token']
+    // HTTP writer example (commented out for demo)
+    // new HttpWriter('https://logs.example.com/api/logs', {
+    //   'Authorization': 'Bearer your-api-token',
+    //   'Content-Type': 'application/json'
+    // }),
+    
+    // Buffered file writer
+    new BufferedWriter(
+      new FileWriter('./logs/buffered.log'),
+      50, // buffer size
+      3000 // flush interval in ms
+    )
+  ]
 });
 
-// Hassas veri maskeleme örneği
-const sensitiveData = {
-  user: {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    password: 'secret123',
-    creditCard: '1234-5678-9012-3456',
-    token: 'abc123def456'
+// Different formatter examples
+const prettyLogger = new Logger({
+  level: LogLevel.INFO,
+  enableConsole: true,
+  // formatter: new ColorfulApiFormatter() // Colorful API-focused output
+});
+
+const productionLogger = new Logger({
+  level: LogLevel.WARN,
+  enableConsole: false,
+  enableFile: true,
+  filePath: './logs/production.log',
+  formatter: new JsonFormatter() // Structured JSON for log aggregation
+});
+
+// Global context setting
+customLogger.setContext('application', 'advanced-example');
+customLogger.setContext('version', '1.0.0');
+customLogger.setUserId('admin-user');
+customLogger.setSessionId('session-12345');
+
+// Different log level examples
+customLogger.debug('Debug message for troubleshooting', { 
+  debugInfo: 'This is only visible in debug mode' 
+});
+
+customLogger.info('Application startup completed', {
+  startupTime: 1500,
+  configuredModules: ['auth', 'database', 'api']
+});
+
+customLogger.warn('High memory usage detected', {
+  memoryUsage: '85%',
+  threshold: '80%',
+  recommendation: 'Consider scaling up'
+});
+
+customLogger.error('Database connection failed', new Error('Connection timeout'), {
+  database: 'postgresql',
+  host: 'db.example.com',
+  port: 5432,
+  retryAttempt: 3
+});
+
+customLogger.fatal('Critical system failure', new Error('Out of memory'), {
+  availableMemory: '10MB',
+  requiredMemory: '500MB',
+  action: 'System restart required'
+});
+
+// Performance monitoring examples
+const dbTimer = customLogger.startTimer('database-operations');
+
+// Simulate database operations
+setTimeout(() => {
+  dbTimer(); // Automatically logs duration and memory usage
+}, 200);
+
+// Manual performance logging
+customLogger.logPerformance({
+  timestamp: new Date(),
+  level: LogLevel.INFO,
+  message: 'Batch processing completed',
+  operation: 'user-data-processing',
+  duration: 2500,
+  customMetrics: {
+    recordsProcessed: 1000,
+    successRate: 0.98,
+    errorCount: 20,
+    memoryPeak: 150 // MB
+  }
+});
+
+// Sensitive data masking examples
+const sensitiveUserData = {
+  id: 12345,
+  name: 'John Doe',
+  email: 'john.doe@example.com',
+  password: 'mySecretPassword123',
+  ssn: '123-45-6789',
+  creditCard: '4532-1234-5678-9012',
+  phoneNumber: '+1-555-123-4567',
+  address: {
+    street: '123 Main St',
+    city: 'Anytown',
+    zipCode: '12345'
   },
-  transaction: {
-    amount: 100,
-    cardNumber: '1111222233334444'
+  preferences: {
+    newsletter: true,
+    apiKey: 'sk_live_1234567890abcdef'
   }
 };
 
-const maskedData = maskSensitiveData(sensitiveData, {
-  sensitiveFields: ['password', 'creditCard', 'token', 'cardNumber'],
+const maskedData = maskSensitiveData(sensitiveUserData, {
+  sensitiveFields: ['password', 'ssn', 'creditCard', 'apiKey'],
   showFirst: 2,
   showLast: 2
 });
 
-customLogger.info('Kullanıcı işlemi', { data: maskedData });
+customLogger.info('User data processing', { userData: maskedData });
 
-// Structured logging örneği
-interface PaymentEvent {
-  eventType: 'payment_started' | 'payment_completed' | 'payment_failed';
-  paymentId: string;
-  amount: number;
-  currency: string;
-  userId: string;
-  merchantId: string;
-}
+// Child logger with service-specific context
+const authServiceLogger = customLogger.child({
+  service: 'authentication',
+  version: '2.1.0',
+  endpoint: '/api/v2/auth'
+});
 
-function logPaymentEvent(event: PaymentEvent) {
-  const logger = customLogger.child({ 
-    domain: 'payment',
-    paymentId: event.paymentId 
-  });
-  
-  switch (event.eventType) {
-    case 'payment_started':
-      logger.info('Ödeme işlemi başlatıldı', {
-        amount: event.amount,
-        currency: event.currency,
-        userId: event.userId,
-        merchantId: event.merchantId
-      });
-      break;
-      
-    case 'payment_completed':
-      logger.info('Ödeme işlemi tamamlandı', {
-        amount: event.amount,
-        currency: event.currency,
-        userId: event.userId,
-        merchantId: event.merchantId
-      });
-      break;
-      
-    case 'payment_failed':
-      logger.error('Ödeme işlemi başarısız', undefined, {
-        amount: event.amount,
-        currency: event.currency,
-        userId: event.userId,
-        merchantId: event.merchantId
-      });
-      break;
-  }
-}
+authServiceLogger.info('User authentication attempt', {
+  userId: 'user_456',
+  method: 'oauth2',
+  provider: 'google'
+});
 
-// Örnek payment event'leri
-const paymentEvents: PaymentEvent[] = [
-  {
-    eventType: 'payment_started',
-    paymentId: 'pay_123',
-    amount: 99.99,
-    currency: 'USD',
-    userId: 'user_456',
-    merchantId: 'merchant_789'
-  },
-  {
-    eventType: 'payment_completed',
-    paymentId: 'pay_123',
-    amount: 99.99,
-    currency: 'USD',
-    userId: 'user_456',
-    merchantId: 'merchant_789'
-  }
-];
+// API interceptor for automatic logging
+const apiInterceptor = new FetchInterceptor(customLogger, {
+  logRequests: true,
+  logResponses: true,
+  logHeaders: true,
+  logBodies: true,
+  maskSensitiveData: true,
+  sensitiveFields: ['authorization', 'x-api-key', 'cookie'],
+  maxBodyLength: 1000
+});
 
-paymentEvents.forEach(logPaymentEvent);
+apiInterceptor.install();
 
-// Axios interceptor örneği (eğer axios kullanılıyorsa)
-// import axios from 'axios';
-// const axiosInstance = axios.create();
-// const axiosInterceptor = new AxiosInterceptor(customLogger);
-// axiosInterceptor.install(axiosInstance);
-
-// Performance monitoring örneği
+// Simulate database service
 class DatabaseService {
   private logger = customLogger.child({ service: 'database' });
   
-  async getUserById(id: string) {
+  async getUserById(userId: string) {
     const timer = this.logger.startTimer('get-user-by-id');
     
     try {
-      // Simulated database call
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 100));
+      this.logger.info('Fetching user from database', { userId });
       
-      const user = { id, name: 'John Doe', email: 'john@example.com' };
-      this.logger.info('Kullanıcı sorgulandı', { userId: id });
+      // Simulate database query
+      await new Promise(resolve => setTimeout(resolve, 50));
       
+      const user = { id: userId, name: 'Sample User', email: 's***@example.com' };
+      
+      this.logger.info('User fetched successfully', { userId, found: true });
       return user;
+      
     } catch (error) {
-      this.logger.error('Kullanıcı sorgusu başarısız', error as Error, { userId: id });
+      this.logger.error('Failed to fetch user', error as Error, { userId });
       throw error;
     } finally {
-      timer(); // Performance logunu yaz
+      timer();
     }
   }
 }
 
-// Service kullanımı
+// Service usage
 const dbService = new DatabaseService();
 
 async function testDatabaseService() {
@@ -157,7 +202,7 @@ async function testDatabaseService() {
   }
 }
 
-// Batch logging örneği
+// Batch logging example
 async function processBatchOperations() {
   const batchLogger = customLogger.child({ operation: 'batch-process' });
   const timer = batchLogger.startTimer('batch-processing');
@@ -170,20 +215,20 @@ async function processBatchOperations() {
     try {
       // Simulate processing
       await new Promise(resolve => setTimeout(resolve, Math.random() * 50));
-      batchLogger.debug('Item işlendi', { itemId: item.id });
+      batchLogger.debug('Item processed', { itemId: item.id });
     } catch (error) {
-      batchLogger.error('Item işleme hatası', error as Error, { itemId: item.id });
+      batchLogger.error('Item processing error', error as Error, { itemId: item.id });
     } finally {
       itemTimer();
     }
   }
   
   timer();
-  batchLogger.info('Batch işlemi tamamlandı', { totalItems: items.length });
+  batchLogger.info('Batch operation completed', { totalItems: items.length });
 }
 
-// Test fonksiyonlarını çalıştır
+// Run test functions
 setTimeout(testDatabaseService, 500);
 setTimeout(processBatchOperations, 1000);
 
-console.log('Gelişmiş logger örnekleri başlatıldı...'); 
+console.log('Advanced logger examples started...'); 

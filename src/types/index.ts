@@ -1,4 +1,4 @@
-// Log seviyeleri
+// Log levels
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -7,10 +7,10 @@ export enum LogLevel {
   FATAL = 4
 }
 
-// HTTP metodları
+// HTTP methods
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'HEAD' | 'OPTIONS';
 
-// Temel log entry interface'i
+// Base log entry interface
 export interface LogEntry {
   timestamp: Date;
   level: LogLevel;
@@ -22,7 +22,7 @@ export interface LogEntry {
   sessionId?: string;
 }
 
-// API çağrısı için özel log entry
+// Special log entry for API calls
 export interface ApiLogEntry extends LogEntry {
   method: HttpMethod;
   url: string;
@@ -39,32 +39,32 @@ export interface ApiLogEntry extends LogEntry {
   };
 }
 
-// Log formatlayıcısı interface'i
+// Log formatter interface
 export interface LogFormatter {
   format(entry: LogEntry): string;
 }
 
-// Log yazıcısı interface'i
+// Log writer interface
 export interface LogWriter {
   write(formattedLog: string, level: LogLevel): Promise<void> | void;
 }
 
-// Logger konfigürasyonu
+// Logger configuration
 export interface LoggerConfig {
   level: LogLevel;
   enableConsole: boolean;
   enableFile: boolean;
   filePath?: string;
-  maxFileSize?: number; // MB cinsinden
+  maxFileSize?: number; // in MB
   maxFiles?: number;
   customWriters?: LogWriter[];
   formatter?: LogFormatter;
   enableApiLogging: boolean;
-  sensitiveFields?: string[]; // Maskelenecek hassas alanlar
+  sensitiveFields?: string[]; // Sensitive fields to be masked
   enablePerformanceLogging: boolean;
 }
 
-// API interceptor konfigürasyonu
+// API interceptor configuration
 export interface ApiInterceptorConfig {
   logRequests: boolean;
   logResponses: boolean;
@@ -75,7 +75,7 @@ export interface ApiInterceptorConfig {
   maxBodyLength: number;
 }
 
-// Performance monitoring için
+// For performance monitoring
 export interface PerformanceEntry extends LogEntry {
   operation: string;
   duration: number;
@@ -87,7 +87,7 @@ export interface PerformanceEntry extends LogEntry {
   customMetrics?: Record<string, number>;
 }
 
-// Logger factory interface'i
+// Logger factory interface
 export interface ILogger {
   debug(message: string, context?: Record<string, any>): void;
   info(message: string, context?: Record<string, any>): void;
@@ -95,7 +95,7 @@ export interface ILogger {
   error(message: string, error?: Error, context?: Record<string, any>): void;
   fatal(message: string, error?: Error, context?: Record<string, any>): void;
   
-  // API logging metodları
+  // API logging methods
   logApiRequest(method: HttpMethod, url: string, options?: Partial<ApiLogEntry>): void;
   logApiResponse(method: HttpMethod, url: string, statusCode: number, responseTime: number, options?: Partial<ApiLogEntry>): void;
   logApiError(method: HttpMethod, url: string, error: Error, options?: Partial<ApiLogEntry>): void;
@@ -104,11 +104,11 @@ export interface ILogger {
   startTimer(operation: string): () => void;
   logPerformance(entry: PerformanceEntry): void;
   
-  // Context yönetimi
+  // Context management
   setContext(key: string, value: any): void;
   getContext(): Record<string, any>;
   clearContext(): void;
   
-  // Child logger oluşturma
+  // Create child logger
   child(context: Record<string, any>): ILogger;
 } 

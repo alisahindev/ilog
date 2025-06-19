@@ -4,12 +4,12 @@ export { Logger } from './core/logger';
 // Type exports
 export * from './types';
 
-// Formatter exports (basit versiyonlar - varsayılan)
+// Formatter exports (simple versions - default)
 export {
     SimpleApiFormatter as ApiFormatter, SimpleJsonFormatter as JsonFormatter, SimplePerformanceFormatter as PerformanceFormatter, SimpleTextFormatter as PrettyFormatter
 } from './formatters/simple';
 
-// Çok renkli formatters (opsiyonel)
+// Colorful formatters (optional)
 export {
     ApiFormatter as ColorfulApiFormatter, JsonFormatter as ColorfulJsonFormatter, PerformanceFormatter as ColorfulPerformanceFormatter, PrettyFormatter as ColorfulPrettyFormatter
 } from './formatters';
