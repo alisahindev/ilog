@@ -1,0 +1,119 @@
+name: Auto Publish
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'package.json'
+
+jobs:
+  check-version-change:
+    runs-on: ubuntu-latest
+    outputs:
+      version-changed: ${{ steps.version-check.outputs.changed }}
+      current-version: ${{ steps.version-check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: version-check
+        run: |
+          # Mevcut version'ı al
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          
+          # Önceki commit'teki version'ı al
+          git checkout HEAD~1 -- package.json 2>/dev/null || echo "İlk commit olabilir"
+          PREVIOUS_VERSION=$(node -p "require('./package.json').version" 2>/dev/null || echo "0.0.0")
+          
+          # package.json'ı geri yükle
+          git checkout HEAD -- package.json
+          
+          echo "Önceki version: $PREVIOUS_VERSION"
+          echo "Mevcut version: $CURRENT_VERSION"
+          
+          # Version değişikliği kontrolü
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ]; then
+            echo "Version değişti: $PREVIOUS_VERSION -> $CURRENT_VERSION"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "Version değişmedi"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: check-version-change
+    if: needs.check-version-change.outputs.version-changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+
+      # Dependencies kurulumu
+      - name: Install dependencies
+        run: npm ci
+
+      # Kalite kontrolleri
+      - name: Run security audit
+        run: npm audit --audit-level moderate
+
+      - name: Run linting
+        run: npm run lint:check
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Type check
+        run: npm run type-check
+
+      - name: Run tests
+        run: npm run test
+
+      # Build
+      - name: Build project
+        run: npm run build
+
+      # GitHub registry için token ayarla
+      - name: Configure GitHub registry
+        run: |
+          echo "@alisahindev:registry=https://npm.pkg.github.com/" >> .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      # NPM registry için token ayarla
+      - name: Configure NPM registry
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" >> .npmrc
+
+      # Publish
+      - name: Publish to registries
+        run: npm run publish:all
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Success notification
+      - name: Create release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ needs.check-version-change.outputs.current-version }}
+          release_name: Release v${{ needs.check-version-change.outputs.current-version }}
+          body: |
+            ## Otomatik Yayın
+            
+            Version ${{ needs.check-version-change.outputs.current-version }} otomatik olarak yayınlandı.
+            
+            ### Değişiklikler
+            - package.json version değişikliği tespit edildi
+            - Kalite kontrolleri başarıyla geçildi
+            - NPM ve GitHub registries'e yayınlandı
+          draft: false
+          prerelease: false 
