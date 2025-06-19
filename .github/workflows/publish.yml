@@ -90,7 +90,6 @@ jobs:
       # GitHub registry için token ayarla
       - name: Configure GitHub registry
         run: |
-          echo "token: ${{ secrets.GH_PAT }}"
           echo "@alisahindev:registry=https://npm.pkg.github.com/" >> .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PAT }}" >> .npmrc
 
