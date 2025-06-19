@@ -238,7 +238,16 @@ async function runAdvancedExample() {
 }
 
 // Run the advanced example
-runAdvancedExample().catch((error) => {
-  console.error('Advanced example failed:', error);
-  throw error;
-}); 
+runAdvancedExample()
+  .then(() => {
+    console.log('Process completed successfully, cleaning up...');
+    // Clean up the API interceptor to allow process to exit naturally
+    apiInterceptor.uninstall();
+    throw new Error('Process completed successfully, cleaning up...');
+  })
+  .catch((error) => {
+    console.error('Advanced example failed:', error);
+    // Clean up even on error
+    apiInterceptor.uninstall();
+    throw error;
+  });

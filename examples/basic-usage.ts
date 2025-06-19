@@ -72,11 +72,11 @@ async function runBasicExample() {
   await new Promise(resolve => setTimeout(resolve, 500));
   
   // Exit the process
-  process.exit(0);
+  throw new Error('Process completed successfully, cleaning up...');
 }
 
 // Run the example
 runBasicExample().catch((error) => {
   console.error('Example failed:', error);
-  process.exit(1);
+  throw error;
 }); 
