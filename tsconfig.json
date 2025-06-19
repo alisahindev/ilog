@@ -30,7 +30,9 @@
     "noUnusedParameters": true
   },
   "include": [
-    "*.ts"
+    "src/**/*.ts",
+    "examples/**/*.ts",
+    "tests/**/*.ts"
   ],
   "exclude": [
     "node_modules",
