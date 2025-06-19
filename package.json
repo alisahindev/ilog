@@ -20,6 +20,9 @@
     "example": "ts-node examples/basic-usage.ts",
     "example-advanced": "ts-node examples/advanced-usage.ts",
     "prepublishOnly": "npm run build",
+    "publish:github": "npm publish --registry=https://npm.pkg.github.com/",
+    "publish:npm": "npm publish --registry=https://registry.npmjs.org/",
+    "publish:all": "npm run publish:github && npm run publish:npm",
     "clean": "rm -rf dist",
     "lint": "eslint src/**/*.ts --fix",
     "lint:check": "eslint src/**/*.ts",
@@ -49,12 +52,16 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/alisahindev/ilog.git"
+    "url": "git+https://github.com/alisahindev/ilog.git"
   },
   "bugs": {
     "url": "https://github.com/alisahindev/ilog/issues"
   },
   "homepage": "https://github.com/alisahindev/ilog#readme",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/",
+    "access": "public"
+  },
   "engines": {
     "node": ">=14.0.0"
   },
