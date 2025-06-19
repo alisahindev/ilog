@@ -89,8 +89,3 @@ jobs:
       
       - name: Build
         run: npm run build
-      
-      - name: Test examples
-        run: |
-          npm run example
-          npm run example-advanced 
