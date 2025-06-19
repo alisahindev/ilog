@@ -2,8 +2,8 @@
   "name": "@alisahindev/ilog",
   "version": "1.1.1",
   "description": "Full type-supported logger for JavaScript/TypeScript projects with API logging, performance monitoring, and sensitive data masking",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "files": [
     "dist",
     "README.md",
