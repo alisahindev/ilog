@@ -159,6 +159,10 @@ export function maskEmail(email: string): string {
   }
   
   const [localPart, domain] = email.split('@');
+  if (!localPart || !domain) {
+    return email;
+  }
+  
   const maskedLocal = localPart.length > 2 
     ? localPart[0] + '*'.repeat(localPart.length - 2) + localPart[localPart.length - 1]
     : '*'.repeat(localPart.length);

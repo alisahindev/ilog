@@ -13,10 +13,21 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
+    "test:coverage": "jest --coverage",
     "example": "ts-node examples/basic-usage.ts",
     "example-advanced": "ts-node examples/advanced-usage.ts",
     "prepublishOnly": "npm run build",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "lint": "eslint src/**/*.ts --fix",
+    "lint:check": "eslint src/**/*.ts",
+    "security:audit": "npm audit",
+    "security:fix": "npm audit fix",
+    "security:check": "npm-check-updates -u",
+    "type-check": "tsc --noEmit",
+    "validate": "npm run lint:check && npm run type-check && npm run test",
+    "deps:check": "depcheck",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\""
   },
   "keywords": [
     "logger",
@@ -49,9 +60,38 @@
     "typescript": "^5.0.0",
     "ts-node": "^10.9.0",
     "jest": "^29.0.0",
-    "@types/jest": "^29.0.0"
+    "@types/jest": "^29.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.45.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-security": "^1.7.1",
+    "eslint-plugin-node": "^11.1.0",
+    "prettier": "^3.0.0",
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.0",
+    "depcheck": "^1.4.3",
+    "npm-check-updates": "^16.10.0",
+    "audit-ci": "^6.6.1"
   },
   "dependencies": {
     "chalk": "^4.1.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm run validate"
+    }
+  },
+  "lint-staged": {
+    "*.ts": [
+      "eslint --fix",
+      "prettier --write",
+      "git add"
+    ],
+    "*.{json,md}": [
+      "prettier --write",
+      "git add"
+    ]
   }
 } 

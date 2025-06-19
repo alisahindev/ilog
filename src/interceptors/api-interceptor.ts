@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
+/* eslint-disable security/detect-object-injection */
 import { ApiInterceptorConfig, HttpMethod, ILogger } from '../types';
 import { maskUrlParameters } from '../utils/sensitive-data';
 
@@ -21,7 +23,7 @@ export abstract class BaseApiInterceptor {
   }
   
   protected maskHeaders(headers: Record<string, string>): Record<string, string> {
-    if (!this.config.maskSensitiveData) return headers;
+    if (!this.config.maskSensitiveData) {return headers;}
     
     const masked: Record<string, string> = {};
     for (const [key, value] of Object.entries(headers)) {
@@ -37,7 +39,7 @@ export abstract class BaseApiInterceptor {
   }
   
   protected maskBody(body: any): any {
-    if (!this.config.maskSensitiveData || !body) return body;
+    if (!this.config.maskSensitiveData || !body) {return body;}
     
     if (typeof body === 'string') {
       return body.length > this.config.maxBodyLength 
@@ -75,7 +77,7 @@ export class FetchInterceptor extends BaseApiInterceptor {
     ): Promise<Response> {
       const startTime = Date.now();
       const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
-      const method = self.getMethodFromString(init?.method || 'GET');
+      const method = self.getMethodFromString(init?.method ?? 'GET');
       
       // Request logging
       if (self.config.logRequests) {
@@ -245,7 +247,7 @@ export class XHRInterceptor extends BaseApiInterceptor {
       private method?: string;
       private url?: string;
       
-      open(method: string, url: string | URL, async?: boolean, user?: string | null, password?: string | null): void {
+      override open(method: string, url: string | URL, async?: boolean, user?: string | null, password?: string | null): void {
         this.method = method;
         this.url = typeof url === 'string' ? url : url.toString();
         this.startTime = Date.now();
@@ -253,7 +255,7 @@ export class XHRInterceptor extends BaseApiInterceptor {
                  super.open(method, url, async ?? true, user, password);
       }
       
-      send(body?: Document | XMLHttpRequestBodyInit | null): void {
+      override send(body?: Document | XMLHttpRequestBodyInit | null): void {
         if (self.config.logRequests && this.method && this.url) {
           const maskedUrl = self.config.maskSensitiveData 
             ? maskUrlParameters(this.url, self.config.sensitiveFields)

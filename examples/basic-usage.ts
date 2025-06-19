@@ -25,12 +25,6 @@ logger.info('Log with context');
 const childLogger = logger.child({ component: 'auth-service' });
 childLogger.info('Auth service operation');
 
-// Performance logging
-const timer = logger.startTimer('database-query');
-setTimeout(() => {
-  timer(); // Writes performance log
-}, 100);
-
 // API interceptor example
 const fetchInterceptor = new FetchInterceptor(logger, {
   logRequests: true,
@@ -41,8 +35,16 @@ const fetchInterceptor = new FetchInterceptor(logger, {
 
 fetchInterceptor.install();
 
-// Sample API call (fetch will be automatically logged)
-setTimeout(async () => {
+// Main execution function to handle all async operations
+async function runBasicExample() {
+  console.log('Basic logger examples started...');
+  
+  // Performance logging
+  const timer = logger.startTimer('database-query');
+  await new Promise(resolve => setTimeout(resolve, 100));
+  timer(); // Writes performance log
+  
+  // Sample API call (fetch will be automatically logged)
   try {
     const response = await fetch('https://jsonplaceholder.typicode.com/posts/1');
     const data = await response.json();
@@ -50,19 +52,31 @@ setTimeout(async () => {
   } catch (error) {
     console.error('API Error:', error);
   }
-}, 1000);
+  
+  // Manual API logging
+  logger.logApiRequest('POST', '/api/users', {
+    requestBody: { name: 'John', email: 'john@example.com', password: 'secret123' },
+    requestHeaders: { 'Authorization': 'Bearer token123' }
+  });
 
-// Manual API logging
-logger.logApiRequest('POST', '/api/users', {
-  requestBody: { name: 'John', email: 'john@example.com', password: 'secret123' },
-  requestHeaders: { 'Authorization': 'Bearer token123' }
-});
+  logger.logApiResponse('POST', '/api/users', 201, 250, {
+    responseBody: { id: 1, name: 'John', email: 'j***@example.com' }
+  });
 
-logger.logApiResponse('POST', '/api/users', 201, 250, {
-  responseBody: { id: 1, name: 'John', email: 'j***@example.com' }
-});
+  // Error logging
+  logger.logApiError('GET', '/api/users/999', new Error('User not found'));
+  
+  console.log('Basic logger examples completed!');
+  
+  // Give some time for any buffered logs to flush
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // Exit the process
+  process.exit(0);
+}
 
-// Error logging
-logger.logApiError('GET', '/api/users/999', new Error('User not found'));
-
-console.log('Logger examples are running...'); 
+// Run the example
+runBasicExample().catch((error) => {
+  console.error('Example failed:', error);
+  process.exit(1);
+}); 

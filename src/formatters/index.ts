@@ -1,4 +1,4 @@
-const chalk = require('chalk');
+import chalk from 'chalk';
 import { ApiLogEntry, LogEntry, LogFormatter, LogLevel, PerformanceEntry } from '../types';
 
 // Color mapping
@@ -123,7 +123,7 @@ export class ApiFormatter implements LogFormatter {
     
     // Error details
     if (apiEntry.errorDetails) {
-      output += `\n${chalk.red('Error:')} ${apiEntry.errorDetails.code || 'Unknown'}`;
+      output += `\n${chalk.red('Error:')} ${apiEntry.errorDetails.code ?? 'Unknown'}`;
       if (apiEntry.errorDetails.stack) {
         output += `\n${chalk.dim(apiEntry.errorDetails.stack)}`;
       }

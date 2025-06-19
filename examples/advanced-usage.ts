@@ -227,8 +227,35 @@ async function processBatchOperations() {
   batchLogger.info('Batch operation completed', { totalItems: items.length });
 }
 
-// Run test functions
-setTimeout(testDatabaseService, 500);
-setTimeout(processBatchOperations, 1000);
+// Run test functions will be handled by the main execution function
 
-console.log('Advanced logger examples started...'); 
+// Main execution function to handle all async operations
+async function runAdvancedExample() {
+  console.log('Advanced logger examples started...');
+  
+  // Wait for initial timer to complete
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Run database service test
+  await testDatabaseService();
+  
+  // Wait a bit more before batch processing
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // Run batch operations
+  await processBatchOperations();
+  
+  console.log('Advanced logger examples completed!');
+  
+  // Give some time for any buffered logs to flush and pending operations to complete
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  
+  // Exit the process
+  process.exit(0);
+}
+
+// Run the advanced example
+runAdvancedExample().catch((error) => {
+  console.error('Advanced example failed:', error);
+  process.exit(1);
+}); 

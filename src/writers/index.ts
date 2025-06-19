@@ -39,7 +39,7 @@ export class FileWriter implements LogWriter {
     this.initializeFileSize();
   }
   
-  async write(formattedLog: string, level: LogLevel): Promise<void> {
+  async write(formattedLog: string): Promise<void> {
     const logLine = `${formattedLog}\n`;
     const logSize = Buffer.byteLength(logLine, 'utf8');
     
@@ -131,7 +131,7 @@ export class BufferedWriter implements LogWriter {
     this.scheduleFlush();
   }
   
-  write(formattedLog: string, level: LogLevel): void {
+  write(formattedLog: string): void {
     this.buffer.push(formattedLog);
     
     if (this.buffer.length >= this.bufferSize) {
@@ -147,7 +147,7 @@ export class BufferedWriter implements LogWriter {
   }
   
   private async flush(): Promise<void> {
-    if (this.buffer.length === 0) return;
+    if (this.buffer.length === 0) {return;}
     
     const logsToFlush = [...this.buffer];
     this.buffer = [];

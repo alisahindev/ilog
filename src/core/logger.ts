@@ -49,8 +49,8 @@ export class Logger implements ILogger {
     if (this.config.enableFile && this.config.filePath) {
       const fileWriter = new FileWriter(
         this.config.filePath,
-        this.config.maxFileSize || 10,
-        this.config.maxFiles || 5
+        this.config.maxFileSize ?? 10,
+        this.config.maxFiles ?? 5
       );
       this.writers.push(new BufferedWriter(fileWriter));
     }
@@ -73,6 +73,14 @@ export class Logger implements ILogger {
   
   private generateRequestId(): void {
     this.requestId = crypto.randomUUID();
+  }
+  
+  private sanitizeString(input: string): string {
+    if (typeof input !== 'string') {
+      return String(input);
+    }
+    // Remove control characters and limit length to prevent injection
+    return input.replace(/[\x00-\x1F\x7F]/g, '').substring(0, 1000); // eslint-disable-line no-control-regex
   }
   
   private shouldLog(level: LogLevel): boolean {
@@ -117,41 +125,53 @@ export class Logger implements ILogger {
   }
   
   // Basic log methods
-  debug(message: string, context?: Record<string, any>): void {
+  debug(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.DEBUG, message, context);
   }
   
-  info(message: string, context?: Record<string, any>): void {
+  info(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.INFO, message, context);
   }
   
-  warn(message: string, context?: Record<string, any>): void {
+  warn(message: string, context?: Record<string, unknown>): void {
     this.log(LogLevel.WARN, message, context);
   }
   
-  error(message: string, error?: Error, context?: Record<string, any>): void {
+  error(message: string, error?: Error, context?: Record<string, unknown>): void {
+    // Validate input to prevent injection attacks
+    if (typeof message !== 'string') {
+      throw new Error('Message must be a string');
+    }
+    
     const errorContext = error ? {
-      errorName: error.name,
-      errorMessage: error.message,
-      errorStack: error.stack,
+      errorName: this.sanitizeString(error.name),
+      errorMessage: this.sanitizeString(error.message),
+      // Only include stack trace in development mode for security
+      errorStack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
       ...context
     } : context;
     
     this.log(LogLevel.ERROR, message, errorContext);
   }
   
-  fatal(message: string, error?: Error, context?: Record<string, any>): void {
+  fatal(message: string, error?: Error, context?: Record<string, unknown>): void {
+    // Validate input to prevent injection attacks
+    if (typeof message !== 'string') {
+      throw new Error('Message must be a string');
+    }
+    
     const errorContext = error ? {
-      errorName: error.name,
-      errorMessage: error.message,
-      errorStack: error.stack,
+      errorName: this.sanitizeString(error.name),
+      errorMessage: this.sanitizeString(error.message),
+      // Only include stack trace in development mode for security
+      errorStack: process.env['NODE_ENV'] === 'development' ? error.stack : undefined,
       ...context
     } : context;
     
     this.log(LogLevel.FATAL, message, errorContext);
   }
   
-  private log(level: LogLevel, message: string, context?: Record<string, any>): void {
+  private log(level: LogLevel, message: string, context?: Record<string, unknown>): void {
     const entry: LogEntry = {
       timestamp: new Date(),
       level,
@@ -167,7 +187,7 @@ export class Logger implements ILogger {
   
   // API logging methods
   logApiRequest(method: HttpMethod, url: string, options: Partial<ApiLogEntry> = {}): void {
-    if (!this.config.enableApiLogging) return;
+    if (!this.config.enableApiLogging) {return;}
     
     const entry: ApiLogEntry = {
       timestamp: new Date(),
@@ -193,7 +213,7 @@ export class Logger implements ILogger {
     responseTime: number, 
     options: Partial<ApiLogEntry> = {}
   ): void {
-    if (!this.config.enableApiLogging) return;
+    if (!this.config.enableApiLogging) {return;}
     
     const level = statusCode >= 400 ? LogLevel.ERROR : LogLevel.INFO;
     const entry: ApiLogEntry = {
@@ -216,7 +236,7 @@ export class Logger implements ILogger {
   }
   
   logApiError(method: HttpMethod, url: string, error: Error, options: Partial<ApiLogEntry> = {}): void {
-    if (!this.config.enableApiLogging) return;
+    if (!this.config.enableApiLogging) {return;}
     
     const entry: ApiLogEntry = {
       timestamp: new Date(),
@@ -270,7 +290,7 @@ export class Logger implements ILogger {
   }
   
   logPerformance(entry: PerformanceEntry): void {
-    if (!this.config.enablePerformanceLogging) return;
+    if (!this.config.enablePerformanceLogging) {return;}
     
     const performanceEntry: PerformanceEntry = {
       ...entry,
@@ -284,11 +304,11 @@ export class Logger implements ILogger {
   }
   
   // Context management
-  setContext(key: string, value: any): void {
+  setContext(key: string, value: unknown): void {
     this.context[key] = value;
   }
   
-  getContext(): Record<string, any> {
+  getContext(): Record<string, unknown> {
     return { ...this.context };
   }
   
@@ -306,7 +326,7 @@ export class Logger implements ILogger {
   }
   
   // Create child logger with additional context
-  child(context: Record<string, any>): ILogger {
+  child(context: Record<string, unknown>): ILogger {
     const childLogger = new Logger(this.config);
     childLogger.context = { ...this.context, ...context };
     childLogger.requestId = this.requestId;
