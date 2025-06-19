@@ -4,21 +4,13 @@ export { Logger } from './core/logger';
 // Type exports
 export * from './types';
 
-// Formatter exports (simple versions - default)
+// Formatter exports (simple versions - default, no dependencies)
 export {
   SimpleApiFormatter as ApiFormatter,
   SimpleJsonFormatter as JsonFormatter,
   SimplePerformanceFormatter as PerformanceFormatter,
-  SimpleTextFormatter as PrettyFormatter,
+  SimpleTextFormatter as PrettyFormatter
 } from './formatters/simple';
-
-// Colorful formatters (optional)
-export {
-  ApiFormatter as ColorfulApiFormatter,
-  JsonFormatter as ColorfulJsonFormatter,
-  PerformanceFormatter as ColorfulPerformanceFormatter,
-  PrettyFormatter as ColorfulPrettyFormatter,
-} from './formatters';
 
 // Writer exports
 export { BufferedWriter, ConsoleWriter, FileWriter, HttpWriter } from './writers';
@@ -29,7 +21,7 @@ export {
   maskEmail,
   maskSensitiveData,
   maskUrlParameters,
-  type SensitiveDataMaskingOptions,
+  type SensitiveDataMaskingOptions
 } from './utils/sensitive-data';
 
 // Interceptor exports
@@ -37,7 +29,7 @@ export {
   AxiosInterceptor,
   BaseApiInterceptor,
   FetchInterceptor,
-  XHRInterceptor,
+  XHRInterceptor
 } from './interceptors/api-interceptor';
 
 // Middleware exports
@@ -46,7 +38,7 @@ export {
   FilterMiddleware,
   MetricsMiddleware,
   RateLimitMiddleware,
-  TimestampMiddleware,
+  TimestampMiddleware
 } from './middlewares';
 
 // Import Logger for factory function

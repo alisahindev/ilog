@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "declarationMap": false,
+    "sourceMap": false
+  },
+  "include": [
+    "src/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "examples/**/*",
+    "tests/**/*",
+    "**/*.spec.ts",
+    "**/*.test.ts",
+    "playwright.config.ts",
+    "test.ts"
+  ]
+} 

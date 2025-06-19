@@ -10,8 +10,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
+    "build": "npm run build:prod",
+    "build:dev": "tsc -p tsconfig.build.json --sourceMap --declarationMap",
+    "build:prod": "tsc -p tsconfig.build.json",
+    "dev": "tsc --watch --sourceMap --declarationMap",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
     "test:debug": "playwright test --debug",
@@ -29,7 +31,7 @@
     "security:audit": "npm audit",
     "security:fix": "npm audit fix",
     "security:check": "npm-check-updates -u",
-    "type-check": "tsc --noEmit",
+    "type-check": "tsc --noEmit && tsc -p tsconfig.build.json --noEmit",
     "validate": "npm run lint:check && npm run type-check && npm run test",
     "deps:check": "depcheck",
     "format": "prettier --write \"src/**/*.ts\"",
@@ -82,8 +84,14 @@
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"
   },
-  "dependencies": {
+  "dependencies": {},
+  "peerDependencies": {
     "chalk": "^4.1.2"
+  },
+  "peerDependenciesMeta": {
+    "chalk": {
+      "optional": true
+    }
   },
   "husky": {
     "hooks": {
