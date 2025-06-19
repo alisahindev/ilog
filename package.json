@@ -1,6 +1,6 @@
 {
   "name": "@alisahindev/ilog",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Full type-supported logger for JavaScript/TypeScript projects with API logging, performance monitoring, and sensitive data masking",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -58,7 +58,6 @@
   "engines": {
     "node": ">=14.0.0"
   },
-
   "devDependencies": {
     "@playwright/test": "^1.53.1",
     "@types/node": "^20.0.0",
