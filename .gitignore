@@ -102,3 +102,4 @@ audit-results.json
 # Testing
 jest.config.js
 test-results/ 
+playwright-report/
