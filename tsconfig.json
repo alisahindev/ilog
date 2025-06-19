@@ -11,7 +11,6 @@
     "noImplicitThis": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true,
-
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "esModuleInterop": true,
@@ -31,10 +30,7 @@
     "noUnusedParameters": true
   },
   "include": [
-    "src/**/*",
-    "tests/**/*",
-    "examples/**/*",
-    "playwright.config.ts"
+    "*.ts"
   ],
   "exclude": [
     "node_modules",
